@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DSE Chemical Formula Master - Bear's Forest V16</title>
+    <style>
+        :root {
+            --forest: #064e3b;
+            --dark: #0f172a;
+            --wood: #78350f;
+            --red: #ef4444;
+            --blue: #3b82f6;
+            --green: #22c55e;
+            --yellow: #eab308;
+            --orange: #f97316;
+            --purple: #a855f7;
+            --white: #ffffff;
+            --mint: #2dd4bf;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #022c22;
+            color: #f8fafc;
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            user-select: none;
+        }
+
+        .game-box {
+            width: 100%;
+            max-width: 680px;
+            background-color: var(--forest);
+            border: 5px solid var(--wood);
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: 0 12px 25px rgba(0,0,0,0.5);
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #052e16;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            border: 2px solid var(--wood);
+        }
+
+        .hearts { color: var(--red); letter-spacing: 2px; }
+
+        .screen {
+            background-color: var(--dark);
+            border: 3px solid #475569;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            min-height: 180px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        .main-emoji { font-size: 60px; margin-bottom: 10px; animation: bounce 0.8s infinite alternate; }
+        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-8px); } }
+
+        .bear-clash { animation: shake 0.15s infinite; background-color: #991b1b !important; }
+        @keyframes shake {
+            0% { transform: translate(1px, 1px); }
+            50% { transform: translate(-2px, -1px); }
+            100% { transform: translate(1px, -1px); }
+        }
+
+        .text-title { font-size: 22px; font-weight: bold; margin: 5px 0; color: #38bdf8; }
+        .text-info { font-size: 16px; color: #cbd5e1; margin-top: 5px; line-height: 1.4; }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .opt-btn {
+            background-color: #1e293b;
+            border: 2px solid #475569;
+            color: white;
+            padding: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: transform 0.1s;
+        }
+        .opt-btn:hover { transform: scale(1.02); border-color: #38bdf8; }
+
+        .bag-tray {
+            background-color: #052e16;
+            border: 2px dashed var(--wood);
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .bag-title { font-size: 14px; color: #a7f3d0; font-weight: bold; margin-bottom: 8px; text-transform: uppercase; }
+
+        .ion-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background-color: #1e3a8a;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            margin: 4px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: default;
+            border: 1px solid #3b82f6;
+        }
+        .active-bag-item {
+            cursor: pointer !important;
+            background-color: #15803d !important;
+            border-color: #4ade80 !important;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+
+        .feedback {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 10px;
+            min-height: 25px;
+        }
+        .win-msg { color: var(--green); }
+        .lose-msg { color: var(--red); }
+
+        sub, sup { line-height: 0; font-size: 12px; }
+    </style>
+</head>
+<body>
+
+    <div class="game-box">
+        <div class="top-bar">
+            <span id="game-stage-text">🌲 Level 1: Forest</span>
+            <div>HP: <span id="hp-box" class="hearts">❤️❤️</span></div>
+            <div>Score: <span id="score-box">0</span></div>
+        </div>
+
+        <div class="screen" id="main-screen">
+            <div class="main-emoji" id="screen-emoji">🌲</div>
+            <div class="text-title" id="screen-text-main">Loading...</div>
+            <div class="text-info" id="screen-text-sub">Please wait.</div>
+        </div>
+
+        <div id="options-ui" class="options-grid"></div>
+
+        <div class="bag-tray">
+            <div class="bag-title">🎒 Your Ion Bag (<span id="bag-count">0</span> / 10 Collected)</div>
+            <div id="bag-list" style="color: #94a3b8; font-size: 14px;">Empty. Find stable ions in the forest!</div>
+        </div>
+
+        <div class="feedback" id="action-feedback"></div>
+    </div>
+
+    <script>
+        // Cleaned Top 20 Elements (Excludes: He, Ne, Ar, C, B, Si)
+        // Group changed to "" for Hydrogen since it doesn't belong to any group
+        const top20ElementPool = [
+            { id: "h", name: "Hydrogen atom", ionName: "Hydrogen ion", isMainGroup: true, atomicNo: 1, group: "", tendency: "Loses 1 electron to be stable", correct: "H<sup>+</sup>", wrong: ["H<sup>-</sup>", "H<sup>2+</sup>", "H<sup>2-</sup>"] },
+            { id: "li", name: "Lithium atom", ionName: "Lithium ion", isMainGroup: true, atomicNo: 3, group: "I", tendency: "Loses 1 electron to be stable", correct: "Li<sup>+</sup>", wrong: ["Li<sup>-</sup>", "Li<sup>2+</sup>", "Li<sup>2-</sup>"] },
+            { id: "be", name: "Beryllium atom", ionName: "Beryllium ion", isMainGroup: true, atomicNo: 4, group: "II", tendency: "Loses 2 electrons to be stable", correct: "Be<sup>2+</sup>", wrong: ["Be<sup>+</sup>", "Be<sup>2-</sup>", "Be<sup>-</sup>"] },
+            { id: "n", name: "Nitrogen atom", ionName: "Nitride ion", isMainGroup: true, atomicNo: 7, group: "V", tendency: "Gains 3 electrons to be stable", correct: "N<sup>3-</sup>", wrong: ["N<sup>3+</sup>", "N<sup>5-</sup>", "N<sup>-</sup>"] },
+            { id: "o", name: "Oxygen atom", ionName: "Oxide ion", isMainGroup: true, atomicNo: 8, group: "VI", tendency: "Gains 2 electrons to be stable", correct: "O<sup>2-</sup>", wrong: ["O<sup>-</sup>", "O<sup>2+</sup>", "O<sup>+</sup>"] },
+            { id: "f", name: "Fluorine atom", ionName: "Fluoride ion", isMainGroup: true, atomicNo: 9, group: "VII", tendency: "Gains 1 electron to be stable", correct: "F<sup>-</sup>", wrong: ["F<sup>+</sup>", "F<sup>2-</sup>", "F<sup>2+</sup>"] },
+            { id: "na", name: "Sodium atom", ionName: "Sodium ion", isMainGroup: true, atomicNo: 11, group: "I", tendency: "Loses 1 electron to be stable", correct: "Na<sup>+</sup>", wrong: ["Na<sup>-</sup>", "Na<sup>2+</sup>", "Na<sup>2-</sup>"] },
+            { id: "mg", name: "Magnesium atom", ionName: "Magnesium ion", isMainGroup: true, atomicNo: 12, group: "II", tendency: "Loses 2 electrons to be stable", correct: "Mg<sup>2+</sup>", wrong: ["Mg<sup>+</sup>", "Mg<sup>-</sup>", "Mg<sup>2-</sup>"] },
+            { id: "al", name: "Aluminium atom", ionName: "Aluminium ion", isMainGroup: true, atomicNo: 13, group: "III", tendency: "Loses 3 electrons to be stable", correct: "Al<sup>3+</sup>", wrong: ["Al<sup>+</sup>", "Al<sup>3-</sup>", "Al<sup>2-</sup>"] },
+            { id: "p", name: "Phosphorus atom", ionName: "Phosphide ion", isMainGroup: true, atomicNo: 15, group: "V", tendency: "Gains 3 electrons to be stable", correct: "P<sup>3-</sup>", wrong: ["P<sup>3+</sup>", "P<sup>5-</sup>", "P<sup>-</sup>"] },
+            { id: "s", name: "Sulfur atom", ionName: "Sulfide ion", isMainGroup: true, atomicNo: 16, group: "VI", tendency: "Gains 2 electrons to be stable", correct: "S<sup>2-</sup>", wrong: ["S<sup>-</sup>", "S<sup>2+</sup>", "S<sup>+</sup>"] },
+            { id: "cl", name: "Chlorine atom", ionName: "Chloride ion", isMainGroup: true, atomicNo: 17, group: "VII", tendency: "Gains 1 electron to be stable", correct: "Cl<sup>-</sup>", wrong: ["Cl<sup>+</sup>", "Cl<sup>2-</sup>", "Cl<sup>2+</sup>"] },
+            { id: "k", name: "Potassium atom", ionName: "Potassium ion", isMainGroup: true, atomicNo: 19, group: "I", tendency: "Loses 1 electron to be stable", correct: "K<sup>+</sup>", wrong: ["K<sup>-</sup>", "K<sup>2+</sup>", "K<sup>2-</sup>"] },
+            { id: "ca", name: "Calcium atom", ionName: "Calcium ion", isMainGroup: true, atomicNo: 20, group: "II", tendency: "Loses 2 electrons to be stable", correct: "Ca<sup>2+</sup>", wrong: ["Ca<sup>+</sup>", "Ca<sup>-</sup>", "Ca<sup>2-</sup>"] }
+        ];
+
+        // Non-Top 20 Element Pool
+        const nonTop20ElementPool = [
+            { id: "i",   name: "Iodine atom", ionName: "Iodide ion", isMainGroup: true, atomicNo: 53, group: "VII", tendency: "Gains 1 electron to be stable", correct: "I<sup>-</sup>", wrong: ["I<sup>+</sup>", "I<sup>2-</sup>", "I<sup>2+</sup>"] },
+            { id: "cu2", name: "Copper(II) ion", ionName: "Copper(II) ion", isMainGroup: false, atomicNo: 29, group: "Transition", tendency: "Loses 2 electrons", correct: "Cu<sup>2+</sup>", wrong: ["Cu<sup>+</sup>", "Cu<sup>2-</sup>", "Cu<sup>-</sup>"] },
+            { id: "pb2", name: "Lead(II) ion", ionName: "Lead(II) ion", isMainGroup: true, atomicNo: 82, group: "IV", tendency: "Loses 2 electrons to form a stable ion", correct: "Pb<sup>2+</sup>", wrong: ["Pb<sup>4+</sup>", "Pb<sup>2-</sup>", "Pb<sup>-</sup>"] },
+            { id: "fe2", name: "Iron(II) ion", ionName: "Iron(II) ion", isMainGroup: false, atomicNo: 26, group: "Transition", tendency: "Loses 2 electrons", correct: "Fe<sup>2+</sup>", wrong: ["Fe<sup>3+</sup>", "Fe<sup>2-</sup>", "Fe<sup>-</sup>"] },
+            { id: "fe3", name: "Iron(III) ion", ionName: "Iron(III) ion", isMainGroup: false, atomicNo: 26, group: "Transition", tendency: "Loses 3 electrons", correct: "Fe<sup>3+</sup>", wrong: ["Fe<sup>2+</sup>", "Fe<sup>3-</sup>", "Fe<sup>-</sup>"] },
+            { id: "ba2", name: "Barium atom", ionName: "Barium ion", isMainGroup: true, atomicNo: 56, group: "II", tendency: "Loses 2 electrons to be stable", correct: "Ba<sup>2+</sup>", wrong: ["Ba<sup>+</sup>", "Ba<sup>2-</sup>", "Ba<sup>-</sup>"] },
+            { id: "sr2", name: "Strontium atom", ionName: "Strontium ion", isMainGroup: true, atomicNo: 38, group: "II", tendency: "Loses 2 electrons to be stable", correct: "Sr<sup>2+</sup>", wrong: ["Sr<sup>+</sup>", "Sr<sup>2-</sup>", "Sr<sup>-</sup>"] },
+            { id: "se2", name: "Selenium atom", ionName: "Selenide ion", isMainGroup: true, atomicNo: 34, group: "VI", tendency: "Gains 2 electrons to be stable", correct: "Se<sup>2-</sup>", wrong: ["Se<sup>-</sup>", "Se<sup>2+</sup>", "Se<sup>+</sup>"] },
+            { id: "zn2", name: "Zinc ion", ionName: "Zinc ion", isMainGroup: false, atomicNo: 30, group: "Transition", tendency: "Loses 2 electrons", correct: "Zn<sup>2+</sup>", wrong: ["Zn<sup>+</sup>", "Zn<sup>2-</sup>", "Zn<sup>-</sup>"] },
+            { id: "ag",  name: "Silver ion", ionName: "Silver ion", isMainGroup: false, atomicNo: 47, group: "Transition", tendency: "Loses 1 electron", correct: "Ag<sup>+</sup>", wrong: ["Ag<sup>2+</sup>", "Ag<sup>-</sup>", "Ag<sup>2-</sup>"] },
+            { id: "hg2", name: "Mercury(II) ion", ionName: "Mercury(II) ion", isMainGroup: false, atomicNo: 80, group: "Transition", tendency: "Loses 2 electrons", correct: "Hg<sup>2+</sup>", wrong: ["Hg<sup>+</sup>", "Hg<sup>2-</sup>", "Hg<sup>-</sup>"] },
+            { id: "hg1", name: "Mercury(I) ion", ionName: "Mercury(I) ion", isMainGroup: false, atomicNo: 80, group: "Transition", tendency: "Loses 1 electron", correct: "Hg<sup>+</sup>", wrong: ["Hg<sup>2+</sup>", "Hg<sup>-</sup>", "Hg<sup>2-</sup>"] },
+            { id: "rb",  name: "Rubidium atom", ionName: "Rubidium ion", isMainGroup: true, atomicNo: 37, group: "I", tendency: "Loses 1 electron to be stable", correct: "Rb<sup>+</sup>", wrong: ["Rb<sup>-</sup>", "Rb<sup>2+</sup>", "Rb<sup>2-</sup>"] }
+        ];
+
+        // Level 3 Pairing Matrix
+        const level3PairingData = {
+            "h":   { bearIon: "SO<sub>4</sub><sup>2-</sup>", bearName: "Sulfate ion", compound: "Sulfuric acid", correctForm: "H<sub>2</sub>SO<sub>4</sub>", wrongs: ["SO<sub>4</sub>H<sub>2</sub>", "HSO<sub>4</sub>", "H<sub>2</sub>(SO<sub>4</sub>)<sub>2</sub>"] },
+            "li":  { bearIon: "CO<sub>3</sub><sup>2-</sup>", bearName: "Carbonate ion", compound: "Lithium carbonate", correctForm: "Li<sub>2</sub>CO<sub>3</sub>", wrongs: ["CO<sub>3</sub>Li<sub>2</sub>", "LiCO<sub>3</sub>", "Li(CO<sub>3</sub>)<sub>2</sub>"] },
+            "be":  { bearIon: "NO<sub>3</sub><sup>-</sup>", bearName: "Nitrate ion", compound: "Beryllium nitrate", correctForm: "Be(NO<sub>3</sub>)<sub>2</sub>", wrongs: ["(NO<sub>3</sub>)<sub>2</sub>Be", "BeNO<sub>3</sub>", "BeNO<sub>3</sub>2"] },
+            "n":   { bearIon: "Mg<sup>2+</sup>", bearName: "Magnesium ion", compound: "Magnesium nitride", correctForm: "Mg<sub>3</sub>N<sub>2</sub>", wrongs: ["N<sub>2</sub>Mg<sub>3</sub>", "MgN", "Mg<sub>2</sub>N<sub>3</sub>"] },
+            "o":   { bearIon: "NH<sub>4</sub><sup>+</sup>", bearName: "Ammonium ion", compound: "Ammonium sulfate", correctForm: "(NH<sub>4</sub>)<sub>2</sub>SO<sub>4</sub>", wrongs: ["SO<sub>4</sub>(NH<sub>4</sub>)<sub>2</sub>", "NH<sub>4</sub>SO<sub>4</sub>", "(NH<sub>4</sub>)SO<sub>4</sub>"] },
+            "f":   { bearIon: "Mg<sup>2+</sup>", bearName: "Magnesium ion", compound: "Magnesium fluoride", correctForm: "MgF<sub>2</sub>", wrongs: ["F<sub>2</sub>Mg", "MgF", "Mg2F"] },
+            "na":  { bearIon: "PO<sub>4</sub><sup>3-</sup>", bearName: "Phosphate ion", compound: "Sodium phosphate", correctForm: "Na<sub>3</sub>PO<sub>4</sub>", wrongs: ["PO<sub>4</sub>Na<sub>3</sub>", "NaPO<sub>4</sub>", "Na<sub>2</sub>PO<sub>4</sub>"] },
+            "mg":  { bearIon: "NO<sub>3</sub><sup>-</sup>", bearName: "Nitrate ion", compound: "Magnesium nitrate", correctForm: "Mg(NO<sub>3</sub>)<sub>2</sub>", wrongs: ["（NO3)2Mg", "Mg(NO<sub>3</sub>)", "MgNO<sub>3</sub>2"] },
+            "al":  { bearIon: "SO<sub>4</sub><sup>2-</sup>", bearName: "Sulfate ion", compound: "Aluminium sulfate", correctForm: "Al<sub>2</sub>(SO<sub>4</sub>)<sub>3</sub>", wrongs: ["(SO<sub>4</sub>)<sub>3</sub>Al<sub>2</sub>", "AlSO<sub>4</sub>", "Al<sub>2</sub>SO<sub>4</sub>"] },
+            "p":   { bearIon: "Al<sup>3+</sup>", bearName: "Aluminium ion", compound: "Aluminium phosphide", correctForm: "AlP", wrongs: ["PAl", "Al<sub>3</sub>P<sub>3</sub>", "AlP<sub>3</sub>"] },
+            "s":   { bearIon: "Na<sup>+</sup>", bearName: "Sodium ion", compound: "Sodium sulfide", correctForm: "Na<sub>2</sub>S", wrongs: ["SNa<sub>2</sub>", "NaS", "NaS<sub>2</sub>"] },
+            "cl":  { bearIon: "NH<sub>4</sub><sup>+</sup>", bearName: "Ammonium ion", compound: "Ammonium chloride", correctForm: "NH<sub>4</sub>Cl", wrongs: ["ClNH<sub>4</sub>", "NH<sub>4</sub>Cl<sub>2</sub>", "(NH<sub>4</sub>)<sub>2</sub>Cl"] },
+            "k":   { bearIon: "SO<sub>4</sub><sup>2-</sup>", bearName: "Sulfate ion", compound: "Potassium sulfate", correctForm: "K<sub>2</sub>SO<sub>4</sub>", wrongs: ["SO<sub>4</sub>K<sub>2</sub>", "KSO<sub>4</sub>", "K(SO<sub>4</sub>)<sub>2</sub>"] },
+            "ca":  { bearIon: "OH<sup>-</sup>", bearName: "Hydroxide ion", compound: "Calcium hydroxide", correctForm: "Ca(OH)<sub>2</sub>", wrongs: ["(OH)<sub>2</sub>Ca", "CaOH", "CaOH<sub>2</sub>"] },
+            "i":   { bearIon: "NH<sub>4</sub><sup>+</sup>", bearName: "Ammonium ion", compound: "Ammonium iodide", correctForm: "NH<sub>4</sub>I", wrongs: ["INH<sub>4</sub>", "NH<sub>4</sub>I<sub>2</sub>", "AmI"] },
+            "cu2": { bearIon: "Cl<sup>-</sup>", bearName: "Chloride ion", compound: "Copper(II) chloride", correctForm: "CuCl<sub>2</sub>", wrongs: ["Cl<sub>2</sub>Cu", "CuCl", "Cu(Cl)<sub>2</sub>"] },
+            "pb2": { bearIon: "NO<sub>3</sub><sup>-</sup>", bearName: "Nitrate ion", compound: "Lead(II) nitrate", correctForm: "Pb(NO<sub>3</sub>)<sub>2</sub>", wrongs: ["(NO<sub>3</sub>)<sub>2</sub>Pb", "PbNO<sub>3</sub>", "Pb2NO<sub>3</sub>"] },
+            "fe2": { bearIon: "OH<sup>-</sup>", bearName: "Hydroxide ion", compound: "Iron(II) hydroxide", correctForm: "Fe(OH)<sub>2</sub>", wrongs: ["(OH)<sub>2</sub>Fe", "FeOH", "FeOH<sub>2</sub>"] },
+            "fe3": { bearIon: "SO<sub>4</sub><sup>2-</sup>", bearName: "Sulfate ion", compound: "Iron(III) sulfate", correctForm: "Fe<sub>2</sub>(SO<sub>4</sub>)<sub>3</sub>", wrongs: ["(SO<sub>4</sub>)<sub>3</sub>Fe<sub>2</sub>", "FeSO<sub>4</sub>", "Fe<sub>3</sub>(SO<sub>4</sub>)<sub>2</sub>"] },
+            "ba2": { bearIon: "Br<sup>-</sup>", bearName: "Bromide ion", compound: "Barium bromide", correctForm: "BaBr<sub>2</sub>", wrongs: ["Br<sub>2</sub>Ba", "BaBr", "Ba<sub>2</sub>Br"] },
+            "sr2": { bearIon: "Cl<sup>-</sup>", bearName: "Chloride ion", compound: "Strontium chloride", correctForm: "SrCl<sub>2</sub>", wrongs: ["Cl<sub>2</sub>Sr", "SrCl", "Sr(Cl)<sub>2</sub>"] },
+            "se2": { bearIon: "Mg<sup>2+</sup>", bearName: "Magnesium ion", compound: "Magnesium selenide", correctForm: "MgSe", wrongs: ["SeMg", "Mg<sub>2</sub>Se", "MgSe<sub>2</sub>"] },
+            "zn2": { bearIon: "NO<sub>3</sub><sup>-</sup>", bearName: "Nitrate ion", compound: "Zinc nitrate", correctForm: "Zn(NO<sub>3</sub>)<sub>2</sub>", wrongs: ["(NO<sub>3</sub>)<sub>2</sub>Zn", "ZnNO<sub>3</sub>", "ZnNO<sub>3</sub>2"] },
+            "ag":  { bearIon: "CO<sub>3</sub><sup>2-</sup>", bearName: "Carbonate ion", compound: "Silver carbonate", correctForm: "Ag<sub>2</sub>CO<sub>3</sub>", wrongs: ["CO<sub>3</sub>Ag<sub>2</sub>", "AgCO<sub>3</sub>", "Ag(CO<sub>3</sub>)<sub>2</sub>"] },
+            "hg2": { bearIon: "Cl<sup>-</sup>", bearName: "Chloride ion", compound: "Mercury(II) chloride", correctForm: "HgCl<sub>2</sub>", wrongs: ["Cl<sub>2</sub>Hg", "HgCl", "Hg(Cl)<sub>2</sub>"] },
+            "hg1": { bearIon: "Cl<sup>-</sup>", bearName: "Chloride ion", compound: "Mercury(I) chloride", correctForm: "HgCl", wrongs: ["ClHg", "HgCl<sub>2</sub>", "Hg<sub>2</sub>Cl"] },
+            "rb":  { bearIon: "SO<sub>4</sub><sup>2-</sup>", bearName: "Sulfate ion", compound: "Rubidium sulfate", correctForm: "Rb<sub>2</sub>SO<sub>4</sub>", wrongs: ["SO<sub>4</sub>Rb<sub>2</sub>", "RbSO<sub>4</sub>", "Rb(SO<sub>4</sub>)<sub>2</sub>"] }
+        };
+
+        let lives = 2;
+        let score = 0;
+        let level = 1;
+        let myBag = [];
+        let forestQueue = [];
+        let currentQuestionIdx = 0;
+        let currentGateItem = null;
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        window.onload = function() {
+            setupGame();
+        };
+
+        function setupGame() {
+            myBag = [];
+            currentQuestionIdx = 0;
+            lives = 2;
+            score = 0;
+            level = 1;
+            
+            let subsetTop20 = shuffle([...top20ElementPool]).slice(0, 8);
+            let subsetHeavy = shuffle([...nonTop20ElementPool]).slice(0, 2);
+            
+            forestQueue = shuffle([...subsetTop20, ...subsetHeavy]);
+            
+            updateBagUI();
+            startLevel1Question();
+        }
+
+        function refreshHUD() {
+            let hearts = "";
+            for (let i = 0; i < 2; i++) {
+                hearts += (i < lives) ? "❤️" : "🖤";
+            }
+            document.getElementById('hp-box').innerHTML = hearts;
+            document.getElementById('score-box').innerText = score;
+            if (lives <= 0) handleGameOver();
+        }
+
+        /* ================= LEVEL 1 ================= */
+        function startLevel1Question() {
+            level = 1;
+            refreshHUD();
+            document.getElementById('game-stage-text').innerText = `🌲 Level 1: Question ${currentQuestionIdx + 1} / 10`;
+            document.getElementById('action-feedback').innerText = "";
+            document.getElementById('main-screen').className = "screen";
+            if (currentQuestionIdx >= 10) {
+                goToLevel2();
+                return;
+            }
+
+            let qNum = currentQuestionIdx + 1;
+            let item = forestQueue[currentQuestionIdx];
+
+            document.getElementById('screen-emoji').innerText = "🌲🏃";
+            
+            // Adjust header depending on stability status
+            const preStableIons = ["pb2", "cu2", "fe2", "fe3", "zn2", "ag", "hg2", "hg1"];
+            if (preStableIons.includes(item.id)) {
+                document.getElementById('screen-text-main').innerHTML = `Find the stable ion:<br><span style="color:var(--yellow); font-size:26px;">${item.name}</span>`;
+            } else {
+                document.getElementById('screen-text-main').innerHTML = `Convert to Stable Ion:<br><span style="color:var(--yellow); font-size:26px;">${item.name}</span>`;
+            }
+
+            let hintString = "";
+            
+            // Core processing logic for Heavy / Non-Top 20 Elements
+            if (item.atomicNo > 20 || item.group === "Transition") {
+                if (item.isMainGroup) {
+                    // Persistent fallback rule: Heavy main group targets ALWAYS retain their group number across all stages
+                    if (qNum <= 2) {
+                        hintString = `<b>Atomic No:</b> ${item.atomicNo}<br><b style="color:var(--purple)">Main Group No: Group ${item.group}</b><br><span style="color:var(--mint)">${item.tendency}</span>`;
+                    } else if (qNum <= 4) {
+                        hintString = `<b>Atomic No:</b> ${item.atomicNo}<br><b style="color:var(--purple)">Main Group No: Group ${item.group}</b><br><span style="color:var(--orange)">[Electron tendency hidden]</span>`;
+                    } else if (qNum <= 6) {
+                        hintString = `<b>Atomic No:</b> ${item.atomicNo}<br><b style="color:var(--purple)">Main Group No: Group ${item.group}</b>`;
+                    } else {
+                        hintString = `<b style="color:var(--purple); font-size:18px;">Main Group No: Group ${item.group}</b><br><span style="color:var(--orange)">[Atomic reference hidden]</span>`;
+                    }
+                } else {
+                    // Handling rule for Transition items
+                    if (qNum <= 2) {
+                        hintString = `<b>Atomic No:</b> ${item.atomicNo}<br><b>Group:</b> ${item.group} | <span style="color:var(--mint)">${item.tendency}</span>`;
+                    } else if (qNum <= 4) {
+                        hintString = `<b>Atomic No:</b> ${item.atomicNo}<br><b>Group:</b> ${item.group} | <span style="color:var(--orange)">[Electron tendency hidden]</span>`;
+                    } else if (qNum <= 6) {
+                        hintString = `<b>Atomic No:</b> ${item.atomicNo}<br><span style="color:var(--orange)">[Group designation hidden]</span>`;
+                    } else {
+                        hintString = `<b style="color:var(--purple); font-size:18px;">Properties: ${item.group} Element</b><br><span style="color:var(--orange)">[Atomic reference hidden]</span>`;
+                    }
+                }
+            } else {
+                // Handling rule for standard Top 20 items (excluding group text entirely if ID is Hydrogen 'h')
+                let groupLabel = (item.id === "h") ? "" : `<b>Group:</b> ${item.group} | `;
+                
+                if (qNum <= 2) {
+                    hintString = `<b>Atomic No:</b> ${item.atomicNo}<br>${groupLabel}<span style="color:var(--mint)">${item.tendency}</span>`;
+                } else if (qNum <= 4) {
+                    hintString = `<b>Atomic No:</b> ${item.atomicNo}<br>${groupLabel}<span style="color:var(--orange)">[Electron tendency hidden]</span>`;
+                } else if (qNum <= 6) {
+                    if (item.id === "h") {
+                        hintString = `<b>Atomic No:</b> ${item.atomicNo}`;
+                    } else {
+                        hintString = `<b>Atomic No:</b> ${item.atomicNo}<br><span style="color:var(--orange)">[Group number & tendency hidden]</span>`;
+                    }
+                } else {
+                    hintString = `<span style="color:var(--red); font-weight:bold;">⚠️ Blind Challenge: All Clues Hidden!</span>`;
+                }
+            }
+            
+            document.getElementById('screen-text-sub').innerHTML = hintString;
+            let choices = [{ formula: item.correct, isTrue: true }];
+            item.wrong.forEach(w => choices.push({ formula: w, isTrue: false }));
+            shuffle(choices);
+            
+            const grid = document.getElementById('options-ui');
+            grid.innerHTML = "";
+            choices.forEach(ch => {
+                const btn = document.createElement('button');
+                btn.className = "opt-btn";
+                btn.innerHTML = ch.formula;
+                btn.onclick = () => checkLevel1Answer(ch.isTrue, item);
+                grid.appendChild(btn);
+            });
+        }
+
+        function checkLevel1Answer(isTrue, itemObj) {
+            document.querySelectorAll('.opt-btn').forEach(b => b.disabled = true);
+            const screen = document.getElementById('main-screen');
+
+            if (isTrue) {
+                score += 10;
+                myBag.push(itemObj);
+                currentQuestionIdx++;
+                updateBagUI();
+                
+                document.getElementById('screen-emoji').innerText = "🎒✨";
+                document.getElementById('screen-text-main').innerText = "Correct! Ion collected!";
+                document.getElementById('action-feedback').className = "feedback win-msg";
+                document.getElementById('action-feedback').innerText = `Success! Added ${itemObj.ionName}.`;
+                setTimeout(startLevel1Question, 1200);
+            } else {
+                lives--;
+                refreshHUD();
+                if (lives <= 0) return;
+
+                screen.classList.add('bear-clash');
+                document.getElementById('screen-emoji').innerText = "🐻🐾";
+                document.getElementById('screen-text-main').innerText = "WRONG ION CHARGE!";
+                document.getElementById('action-feedback').className = "feedback lose-msg";
+                document.getElementById('action-feedback').innerText = "Bear scratched you! Keep standard core charges in mind.";
+                setTimeout(() => {
+                    screen.classList.remove('bear-clash');
+                    startLevel1Question();
+                }, 2000);
+            }
+        }
+
+        /* ================= LEVEL 2 ================= */
+        function goToLevel2() {
+            level = 2;
+            lives = 2; 
+            refreshHUD();
+            document.getElementById('game-stage-text').innerText = "🐻 Level 2: Bear's Inspection Gate";
+            selectNextLevel2Recall();
+        }
+
+        function selectNextLevel2Recall() {
+            document.getElementById('options-ui').innerHTML = "";
+            document.getElementById('action-feedback').innerText = "";
+            document.getElementById('main-screen').className = "screen";
+            
+            if (myBag.length === 0) {
+                triggerVictory();
+                return;
+            }
+
+            currentGateItem = myBag[Math.floor(Math.random() * myBag.length)];
+            document.getElementById('screen-emoji').innerText = "🐻📜";
+            document.getElementById('screen-text-main').innerHTML = `Bear Demands:<br>"Give me the <span style='color:var(--yellow);'>${currentGateItem.ionName}</span>!"`;
+            document.getElementById('screen-text-sub').innerText = "Click the correct matching badge inside your green backpack tray below!";
+            
+            updateBagUI();
+        }
+
+        function selectBagIonLevel2(selectedItem) {
+            if (level !== 2) return;
+            if (selectedItem.id === currentGateItem.id) {
+                score += 15;
+                document.getElementById('screen-emoji').innerText = "🐻👍";
+                document.getElementById('screen-text-main').innerText = "Correct Ion Retrieved!";
+                document.getElementById('action-feedback').className = "feedback win-msg";
+                document.getElementById('action-feedback').innerText = "Bear verified the target element identity.";
+                setTimeout(goToLevel3SinglePairing, 1500);
+            } else {
+                handleGateMistake("Wrong ion provided! The Bear rejects it.");
+            }
+        }
+
+        /* ================= LEVEL 3 ================= */
+        function goToLevel3SinglePairing() {
+            level = 3;
+            document.getElementById('game-stage-text').innerText = "🐻 Level 3: Balanced Compound Pairing";
+            document.getElementById('action-feedback').innerText = "";
+            document.getElementById('main-screen').className = "screen";
+
+            let pairSetup = level3PairingData[currentGateItem.id];
+            document.getElementById('screen-emoji').innerText = "🐻⚖️";
+            document.getElementById('screen-text-main').innerHTML = `Pair Up: Your <span style="color:var(--mint);">${currentGateItem.correct}</span> + Bear's <span style="color:var(--purple);">${pairSetup.bearIon} (${pairSetup.bearName})</span>`;
+            document.getElementById('screen-text-sub').innerHTML = `Select the correct balanced formula for:<br><b style="color:var(--yellow); font-size:18px;">${pairSetup.compound}</b>`;
+
+            let options = [{ text: pairSetup.correctForm, isTrue: true }];
+            pairSetup.wrongs.forEach(w => options.push({ text: w, isTrue: false }));
+            shuffle(options);
+
+            const grid = document.getElementById('options-ui');
+            grid.innerHTML = "";
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = "opt-btn";
+                btn.innerHTML = opt.text;
+                btn.onclick = () => checkLevel3Formula(opt.isTrue);
+                grid.appendChild(btn);
+            });
+        }
+
+        function checkLevel3Formula(isTrue) {
+            document.querySelectorAll('.opt-btn').forEach(b => b.disabled = true);
+            if (isTrue) {
+                score += 30;
+                myBag = myBag.filter(item => item.id !== currentGateItem.id);
+                updateBagUI();
+
+                if (myBag.length === 0) {
+                    triggerVictory();
+                } else {
+                    document.getElementById('screen-emoji').innerText = "🐻🎉";
+                    document.getElementById('screen-text-main').innerText = "Perfect Balanced Formula!";
+                    document.getElementById('action-feedback').className = "feedback win-msg";
+                    document.getElementById('action-feedback').innerText = "Correct layout. Returning to inventory gate inspection!";
+                    
+                    setTimeout(goToLevel2, 1500);
+                }
+            } else {
+                handleGateMistake("Incorrect ratio notation! Always order the positive cation before the negative anion.");
+            }
+        }
+
+        /* ================= LIFE CONTROL LOGIC ================= */
+        function handleGateMistake(failMessageText) {
+            lives--;
+            refreshHUD();
+            if (lives <= 0) return; 
+
+            const screen = document.getElementById('main-screen');
+            screen.classList.add('bear-clash');
+
+            document.getElementById('screen-emoji').innerText = "🐻⚡";
+            document.getElementById('screen-text-main').innerText = "MISTAKE DETECTED!";
+            document.getElementById('screen-text-sub').innerText = failMessageText;
+            
+            document.getElementById('action-feedback').className = "feedback lose-msg";
+            document.getElementById('action-feedback').innerText = "You lost 1 heart! You have one final chance remaining.";
+            setTimeout(() => {
+                screen.classList.remove('bear-clash');
+                if (level === 2) {
+                    selectNextLevel2Recall();
+                } else if (level === 3) {
+                    goToLevel3SinglePairing();
+                }
+            }, 2500);
+        }
+
+        function updateBagUI() {
+            const listDiv = document.getElementById('bag-list');
+            document.getElementById('bag-count').innerText = myBag.length;
+
+            if (myBag.length === 0) {
+                listDiv.innerHTML = "Your bag is empty! You are clear to escape!";
+                return;
+            }
+
+            listDiv.innerHTML = "";
+            myBag.forEach((ion) => {
+                const badge = document.createElement('span');
+                badge.className = "ion-badge";
+                badge.innerHTML = ion.correct;
+                
+                if (level === 2) {
+                    badge.classList.add('active-bag-item');
+                    badge.onclick = () => selectBagIonLevel2(ion);
+                }
+                listDiv.appendChild(badge);
+            });
+        }
+
+        function handleGameOver() {
+            document.getElementById('main-screen').className = "screen bear-clash";
+            document.getElementById('screen-emoji').innerText = "💀🐻";
+            document.getElementById('screen-text-main').innerText = "GAME OVER!";
+            document.getElementById('screen-text-sub').innerText = "You made two mistakes! You are sent back to the very beginning of the forest loops.";
+            document.getElementById('options-ui').innerHTML = `<button class='opt-btn' style='grid-column: span 2; background: var(--red);' onclick='setupGame()'>Restart From Beginning 🔁</button>`;
+        }
+
+        function triggerVictory() {
+            document.getElementById('options-ui').innerHTML = "";
+            document.getElementById('main-screen').style.backgroundColor = "var(--forest)";
+            document.getElementById('screen-emoji').innerText = "🏆🎓👑";
+            document.getElementById('screen-text-main').innerText = "YOU ESCAPED THE FOREST!";
+            document.getElementById('screen-text-sub').innerHTML = `Outstanding job! You recalled and balanced all 10 ions perfectly. <br><b>Final Score:</b> <span style="color:var(--yellow); font-size:22px;">${score}</span>`;
+            document.getElementById('options-ui').innerHTML = `<button class='opt-btn' style='grid-column: span 2; background: var(--green); color:black;' onclick='setupGame()'>Play Again 🔁</button>`;
+        }
+    </script>
+</body>
+</html>
