@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Microscopic Acid Ionization & Lab Simulator V9</title>
+    <style>
+        :root {
+            --bg-primary: #0b0f19;
+            --bg-secondary: #161d30;
+            --bg-tertiary: #212b45;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            
+            /* Strict User Color Specifications */
+            --color-h: #ff3333;         /* Red for H+ */
+            --color-cl: #00a2ff;        /* Blue for Cl- */
+            --color-ch3coo: #facc15;    /* Yellow for CH3COO- */
+            --color-ch3cooh: #1d4ed8;   /* Royal Blue for CH3COOH */
+            
+            --strong-accent: #38bdf8;
+            --weak-accent: #fbbf24;
+            --accent-orange: #f97316;
+            --accent-green: #10b981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            padding: 15px;
+            min-height: 100vh;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 13px;
+            margin-top: 4px;
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 20px;
+            max-width: 1700px;
+            margin: 0 auto;
+        }
+
+        .control-panel {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            height: fit-content;
+        }
+
+        .panel-section h3 {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            border-left: 3px solid var(--accent-orange);
+            padding-left: 8px;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            display: block;
+            font-size: 13px;
+            margin-bottom: 6px;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            accent-color: var(--accent-orange);
+            background: var(--border-color);
+            height: 6px;
+            border-radius: 3px;
+        }
+
+        .value-display {
+            font-family: monospace;
+            font-size: 13px;
+            background: var(--bg-tertiary);
+            padding: 3px 8px;
+            border-radius: 4px;
+            min-width: 55px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .radio-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--bg-tertiary);
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .radio-btn:hover { background: #2a3754; }
+        .radio-btn input { accent-color: var(--accent-orange); }
+
+        .action-btn {
+            width: 100%;
+            background: var(--accent-green);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s, opacity 0.2s;
+        }
+
+        .action-btn:hover { background: #059669; }
+        .action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .workspace {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .acid-column {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .acid-header {
+            padding: 12px 15px;
+            font-weight: 700;
+            font-size: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .strong-hdr { background: rgba(56, 189, 248, 0.1); color: var(--strong-accent); border-top: 4px solid var(--strong-accent); }
+        .weak-hdr { background: rgba(251, 191, 36, 0.1); color: var(--weak-accent); border-top: 4px solid var(--weak-accent); }
+
+        .formula-badge {
+            font-size: 11px;
+            background: rgba(255,255,255,0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #fff;
+        }
+
+        .canvas-area {
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .box-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .canvas-window {
+            position: relative;
+            height: 180px;
+            background: #05070c;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .metrics-subgrid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            padding: 12px;
+            background: rgba(0,0,0,0.15);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .metric-item {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 8px 10px;
+        }
+
+        .m-lbl { font-size: 10px; color: var(--text-muted); display: block; margin-bottom: 2px;}
+        .m-val { font-size: 13px; font-weight: 700; font-family: monospace; }
+
+        .macro-area {
+            padding: 15px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .macro-window {
+            height: 150px;
+            background: #05070c;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            padding-bottom: 8px;
+            overflow: hidden;
+        }
+
+        .species-legend {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            font-size: 12px;
+        }
+
+        .legend-chip { display: flex; align-items: center; gap: 6px; }
+        .indicator-dot { width: 14px; height: 14px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; color: #000; }
+
+        .graph-container {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 15px;
+            height: 270px;
+        }
+
+        .fluid-body {
+            position: absolute;
+            bottom: 0;
+            width: 65%;
+            height: 65%;
+            background: rgba(30, 41, 59, 0.4);
+            border: 2px solid #64748b;
+            border-top: none;
+            border-bottom-left-radius: 10px;
+            border-bottom-right-radius: 10px;
+            overflow: hidden;
+        }
+
+        .macro-bulb { position: absolute; top: 15px; width: 24px; height: 24px; border-radius: 50%; background: #334155; transition: all 0.2s; }
+        .metal-rod { position: absolute; bottom: 5px; width: 12px; height: 70px; background: #78716c; border-radius: 1px; transform-origin: bottom center; transition: transform 0.1s linear; }
+
+        .macro-thermometer { position: absolute; right: 22%; bottom: 15px; width: 10px; height: 75px; background: #1e293b; border-radius: 4px; border: 1px solid #475569; padding: 1px; }
+        .macro-column-fluid { background: #ef4444; width: 100%; border-radius: 2px; position: absolute; bottom: 1px; height: 20%; transition: height 0.4s ease; }
+        .macro-buret { position: absolute; top: 0; width: 8px; height: 35px; background: rgba(255,255,255,0.15); border: 1px solid #475569; }
+        .macro-stream { position: absolute; top: 35px; width: 2px; height: 30px; background: #60a5fa; display: none; }
+        .summary-overlay { background: rgba(0,0,0,0.2); padding: 8px; border-radius: 6px; font-size: 11.5px; line-height: 1.4; border: 1px dashed var(--border-color); margin-top: auto; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Microscopic Acid Ionization Lab (Version 9)</h1>
+        <p>Interactive Molecular View, Electrical Conductivity, and Volumetric NaOH Titration Suites</p>
+    </header>
+
+    <div class="main-layout">
+        <div class="control-panel">
+            <div class="panel-section">
+                <h3>Variable Controller</h3>
+                
+                <div class="control-group">
+                    <div class="radio-group">
+                        <label class="radio-btn">
+                            <input type="radio" name="inputMode" value="conc" checked onchange="handleModeChange('conc')">
+                            Fix Initial Concentration (M)
+                        </label>
+                        <label class="radio-btn">
+                            <input type="radio" name="inputMode" value="ph" onchange="handleModeChange('ph')">
+                            Fix Initial Solution pH
+                        </label>
+                    </div>
+                </div>
+
+                <div class="control-group" id="group-conc">
+                    <label>Concentration (0.05M - 5.0M)</label>
+                    <div class="slider-container">
+                        <input type="range" id="sliderConc" min="0.05" max="5.0" step="0.05" value="1.0" oninput="syncConc(this.value)">
+                        <span class="value-display" id="dispConc">1.00</span>
+                    </div>
+                </div>
+
+                <div class="control-group" id="group-ph" style="display: none;">
+                    <label>Target Initial pH (-0.7 to 3.5)</label>
+                    <div class="slider-container">
+                        <input type="range" id="sliderPh" min="-0.70" max="3.50" step="0.05" value="1.00" oninput="syncPh(this.value)">
+                        <span class="value-display" id="dispPh">1.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h3>Analytical Properties</h3>
+                <div class="control-group">
+                    <label>Active Diagnostic Test</label>
+                    <div class="radio-group">
+                        <label class="radio-btn">
+                            <input type="radio" name="testSuite" value="equilibrium" checked onchange="toggleTest('equilibrium')">
+                            Dynamic Ionization View
+                        </label>
+                        <label class="radio-btn">
+                            <input type="radio" name="testSuite" value="conductivity" onchange="toggleTest('conductivity')">
+                            Electrical Conductivity
+                        </label>
+                        <label class="radio-btn">
+                            <input type="radio" name="testSuite" value="neutralization" onchange="toggleTest('neutralization')">
+                            Neutralization: NaOH
+                        </label>
+                    </div>
+                </div>
+
+                <button class="action-btn" id="btnExecute" onclick="triggerExperiment()" disabled>Run Selected Experiment</button>
+            </div>
+        </div>
+
+        <div class="workspace">
+            <div class="species-legend">
+                <div class="legend-chip"><div class="indicator-dot" style="background: var(--color-h); color: #fff;">+</div> <strong>H⁺</strong> (Red)</div>
+                <div class="legend-chip"><div class="indicator-dot" style="background: var(--color-cl); color: #000;">-</div> <strong>Cl⁻</strong> (Blue)</div>
+                <div class="legend-chip"><div class="indicator-dot" style="background: var(--color-ch3coo); color: #000;">-</div> <strong>CH₃COO⁻</strong> (Yellow)</div>
+                <div class="legend-chip"><div class="indicator-dot" style="background: var(--color-ch3cooh); color: #fff;"> </div> <strong>CH₃COOH</strong> (Royal Blue Neutral)</div>
+            </div>
+
+            <div class="comparison-grid">
+                <div class="acid-column">
+                    <div class="acid-header strong-hdr">
+                        <span>STRONG ACID</span>
+                        <span class="formula-badge">HCl</span>
+                    </div>
+                    
+                    <div class="canvas-area">
+                        <div class="box-label"><span>Microscopic Field View</span><span>Ionization Rate: 100%</span></div>
+                        <div class="canvas-window"><canvas id="canvasStrong"></canvas></div>
+                    </div>
+
+                    <div class="metrics-subgrid">
+                        <div class="metric-item"><span class="m-lbl">Analytical Conc.</span><span class="m-val" id="s-metric-conc">1.00 M</span></div>
+                        <div class="metric-item"><span class="m-lbl">Solution pH</span><span class="m-val" id="s-metric-ph">0.00</span></div>
+                        <div class="metric-item"><span class="m-lbl">[H⁺] Active</span><span class="m-val" id="s-metric-h3o">1.000 M</span></div>
+                        <div class="metric-item"><span class="m-lbl">[Cl⁻] Active</span><span class="m-val" id="s-metric-anion">1.000 M</span></div>
+                    </div>
+
+                    <div class="macro-area">
+                        <div class="box-label">Macroscopic Viewport</div>
+                        <div class="macro-window" id="s-macro-win"></div>
+                        <div class="summary-overlay" id="s-summary">Select a laboratory test on the left panel to begin.</div>
+                    </div>
+                </div>
+
+                <div class="acid-column">
+                    <div class="acid-header weak-hdr">
+                        <span>WEAK ACID (Highly Boosted Ionization)</span>
+                        <span class="formula-badge">CH₃COOH</span>
+                    </div>
+
+                    <div class="canvas-area">
+                        <div class="box-label"><span>Microscopic Field View</span><span id="w-ionization-rate">Ionization Rate: ~23.0%</span></div>
+                        <div class="canvas-window"><canvas id="canvasWeak"></canvas></div>
+                    </div>
+
+                    <div class="metrics-subgrid">
+                        <div class="metric-item"><span class="m-lbl">Analytical Conc.</span><span class="m-val" id="w-metric-conc">1.00 M</span></div>
+                        <div class="metric-item"><span class="m-lbl">Solution pH</span><span class="m-val" id="w-metric-ph">0.62</span></div>
+                        <div class="metric-item"><span class="m-lbl">[H⁺] Active</span><span class="m-val" id="w-metric-h3o">0.225 M</span></div>
+                        <div class="metric-item"><span class="m-lbl">[CH₃COOH] Remaining</span><span class="m-val" id="w-metric-union">0.775 M</span></div>
+                    </div>
+
+                    <div class="macro-area">
+                        <div class="box-label">Macroscopic Viewport</div>
+                        <div class="macro-window" id="w-macro-win"></div>
+                        <div class="summary-overlay" id="w-summary">Select a laboratory test on the left panel to begin.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="graph-container">
+                <div class="box-label">Live Laboratory Real-Time Complete Graph Workspace</div>
+                <canvas id="canvasGraph"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Highly elevated visual Ka value to achieve around 23% degree of dissociation at 1.0M
+        const Ka_Enhanced = 6.5e-2; 
+
+        let inputMode = 'conc';
+        let currentConc = 1.00;
+        let currentPh = 1.00;
+        let selectedTest = 'equilibrium';
+        
+        let runActive = false;
+        let timelineTick = 0;
+        let graphHistory = [];
+
+        let strongArray = [];
+        let weakArray = [];
+
+        const cvsS = document.getElementById('canvasStrong');
+        const cvsW = document.getElementById('canvasWeak');
+        const cvsG = document.getElementById('canvasGraph');
+        
+        const ctxS = cvsS.getContext('2d');
+        const ctxW = cvsW.getContext('2d');
+        const ctxG = cvsG.getContext('2d');
+
+        function resizeCanvases() {
+            [cvsS, cvsW, cvsG].forEach(c => {
+                const b = c.parentElement.getBoundingClientRect();
+                c.width = b.width; c.height = b.height;
+            });
+        }
+
+        function solveSystem() {
+            let s_c, s_ph, s_h3o;
+            let w_c, w_ph, w_h3o, w_union;
+
+            if (inputMode === 'conc') {
+                s_c = currentConc; s_h3o = s_c;
+                s_ph = s_h3o > 0 ? -Math.log10(s_h3o) : 7.0;
+
+                w_c = currentConc;
+                let det = (Ka_Enhanced * Ka_Enhanced) - (4 * 1 * (-Ka_Enhanced * w_c));
+                w_h3o = (-Ka_Enhanced + Math.sqrt(det)) / 2;
+                w_ph = w_h3o > 0 ? -Math.log10(w_h3o) : 7.0;
+                w_union = w_c - w_h3o;
+            } else {
+                let targetH3O = Math.pow(10, -currentPh);
+                s_h3o = targetH3O; s_c = targetH3O; s_ph = currentPh;
+
+                w_h3o = targetH3O;
+                w_union = (w_h3o * w_h3o) / Ka_Enhanced;
+                w_c = w_union + w_h3o; w_ph = currentPh;
+            }
+
+            return {
+                strong: { conc: s_c, ph: s_ph, h3o: s_h3o, anion: s_c },
+                weak: { conc: w_c, ph: w_ph, h3o: w_h3o, union: w_union }
+            };
+        }
+
+        function refreshSimulation() {
+            const data = solveSystem();
+
+            document.getElementById('s-metric-conc').innerText = data.strong.conc.toFixed(2) + " M";
+            document.getElementById('s-metric-ph').innerText = data.strong.ph.toFixed(2);
+            document.getElementById('s-metric-h3o').innerText = data.strong.h3o.toFixed(3) + " M";
+            document.getElementById('s-metric-anion').innerText = data.strong.anion.toFixed(3) + " M";
+
+            document.getElementById('w-metric-conc').innerText = data.weak.conc.toFixed(2) + " M";
+            document.getElementById('w-metric-ph').innerText = data.weak.ph.toFixed(2);
+            document.getElementById('w-metric-h3o').innerText = data.weak.h3o.toFixed(3) + " M";
+            document.getElementById('w-metric-union').innerText = data.weak.union.toFixed(3) + " M";
+
+            let alpha = data.weak.conc > 0 ? (data.weak.h3o / data.weak.conc) * 100 : 0;
+            document.getElementById('w-ionization-rate').innerText = `Ionization Rate: ~${alpha.toFixed(1)}%`;
+
+            populateParticles(data);
+            drawMacroStatic();
+            if (!runActive) updateGraphPlaceholder();
+        }
+
+        function populateParticles(data) {
+            strongArray = []; weakArray = [];
+            const multiplier = 16; 
+            
+            let s_h3o_count = Math.max(1, Math.min(45, Math.round(data.strong.h3o * multiplier)));
+            for(let i=0; i<s_h3o_count; i++) {
+                strongArray.push(spawnAtom('h3o'));
+                strongArray.push(spawnAtom('cl'));
+            }
+
+            let w_h3o_count = Math.max(1, Math.min(45, Math.round(data.weak.h3o * multiplier)));
+            for(let i=0; i<w_h3o_count; i++) {
+                weakArray.push(spawnAtom('h3o'));
+                weakArray.push(spawnAtom('ch3coo'));
+            }
+            let w_union_count = Math.max(0, Math.min(50, Math.round(data.weak.union * multiplier)));
+            for(let i=0; i<w_union_count; i++) weakArray.push(spawnAtom('ch3cooh'));
+        }
+
+        function spawnAtom(type) {
+            return {
+                type: type,
+                x: Math.random() * (cvsS.width - 24) + 12,
+                y: Math.random() * (cvsS.height - 24) + 12,
+                vx: (Math.random() - 0.5) * 1.5,
+                vy: (Math.random() - 0.5) * 1.5,
+                r: type === 'ch3cooh' || type === 'ch3coo' ? 8 : 6
+            };
+        }
+
+        function handleModeChange(mode) {
+            inputMode = mode;
+            document.getElementById('group-conc').style.display = mode === 'conc' ? 'block' : 'none';
+            document.getElementById('group-ph').style.display = mode === 'ph' ? 'block' : 'none';
+            stopExperimentLoop(); refreshSimulation();
+        }
+
+        function syncConc(v) {
+            currentConc = parseFloat(v);
+            document.getElementById('dispConc').innerText = currentConc.toFixed(2);
+            stopExperimentLoop(); refreshSimulation();
+        }
+
+        function syncPh(v) {
+            currentPh = parseFloat(v);
+            document.getElementById('dispPh').innerText = currentPh.toFixed(2);
+            stopExperimentLoop(); refreshSimulation();
+        }
+
+        function toggleTest(test) {
+            selectedTest = test;
+            document.getElementById('btnExecute').disabled = test === 'equilibrium';
+            stopExperimentLoop(); refreshSimulation();
+        }
+
+        function drawMacroStatic() {
+            if (runActive) return;
+            const sWin = document.getElementById('s-macro-win');
+            const wWin = document.getElementById('w-macro-win');
+
+            if (selectedTest === 'conductivity') {
+                buildConductivityBase(sWin, 's'); buildConductivityBase(wWin, 'w');
+                document.getElementById('s-summary').innerText = "Electrodes lowered. Ready to test electrical conductivity.";
+                document.getElementById('w-summary').innerText = "Electrodes lowered. Ready to test electrical conductivity.";
+            } else if (selectedTest === 'neutralization') {
+                buildNeutralizationBase(sWin, 's'); buildNeutralizationBase(wWin, 'w');
+                document.getElementById('s-summary').innerText = "Buret prepared with basic NaOH solution.";
+                document.getElementById('w-summary').innerText = "Buret prepared with basic NaOH solution.";
+            } else {
+                sWin.innerHTML = `<div style="margin:auto; font-size:12px; color:var(--text-muted);">Analytical framework stable.</div>`;
+                wWin.innerHTML = `<div style="margin:auto; font-size:12px; color:var(--text-muted);">Analytical framework stable.</div>`;
+                document.getElementById('s-summary').innerText = "Strong Acid: Instant 100% complete forward dissociation.";
+                document.getElementById('w-summary').innerText = "Weak Acid: Dynamic equilibrium displaying visible active ions.";
+            }
+        }
+
+        function buildConductivityBase(el, pfx) {
+            el.innerHTML = `<div class="fluid-body"></div><div class="metal-rod" style="left:35%; width:6px; background:#94a3b8;"></div><div class="metal-rod" style="left:60%; width:6px; background:#94a3b8;"></div><div class="macro-bulb" id="${pfx}-bulb" style="left:46%;"></div>`;
+        }
+        function buildNeutralizationBase(el, pfx) {
+            el.innerHTML = `<div class="fluid-body" id="${pfx}-fluid" style="background:rgba(255,255,255,0.08);"></div><div class="macro-buret" style="left:48%;"></div><div class="macro-stream" id="${pfx}-stream" style="left:49%;"></div><div class="macro-thermometer"><div class="macro-column-fluid" id="${pfx}-t"></div></div>`;
+        }
+
+        function triggerExperiment() {
+            if (runActive) return;
+            runActive = true; timelineTick = 0; graphHistory = [];
+            document.getElementById('btnExecute').disabled = true;
+        }
+
+        function stopExperimentLoop() {
+            runActive = false; timelineTick = 0;
+            document.getElementById('btnExecute').disabled = selectedTest === 'equilibrium';
+        }
+
+        function coreLoop() {
+            moveAtoms(strongArray, cvsS.width, cvsS.height);
+            moveAtoms(weakArray, cvsW.width, cvsW.height);
+
+            renderField(ctxS, strongArray, cvsS);
+            renderField(ctxW, weakArray, cvsW);
+
+            if (selectedTest === 'conductivity') {
+                showVisualVoltage(ctxS, cvsS); showVisualVoltage(ctxW, cvsW);
+            }
+            if (runActive) {
+                timelineTick += 0.4; processActiveExperimentData();
+            }
+            requestAnimationFrame(coreLoop);
+        }
+
+        function moveAtoms(arr, w, h) {
+            arr.forEach(p => {
+                p.x += p.vx; p.y += p.vy;
+                if (p.x - p.r < 0 || p.x + p.r > w) p.vx *= -1;
+                if (p.y - p.r < 0 || p.y + p.r > h) p.vy *= -1;
+                p.x = Math.max(p.r, Math.min(w - p.r, p.x));
+                p.y = Math.max(p.r, Math.min(h - p.r, p.y));
+            });
+        }
+
+        function renderField(ctx, arr, cvs) {
+            ctx.clearRect(0,0,cvs.width,cvs.height);
+            arr.forEach(p => {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+                
+                // Color Assignments
+                if (p.type === 'h3o') ctx.fillStyle = '#ff3333';       /* H+ Red */
+                else if (p.type === 'cl') ctx.fillStyle = '#00a2ff';    /* Cl- Blue */
+                else if (p.type === 'ch3coo') ctx.fillStyle = '#facc15';/* CH3COO- Yellow */
+                else if (p.type === 'ch3cooh') ctx.fillStyle = '#1d4ed8';/* CH3COOH Royal Blue */
+                
+                ctx.fill();
+                
+                // Ionic Charge Indicators
+                if(p.type === 'h3o') {
+                    ctx.fillStyle = '#ffffff'; ctx.font = 'bold 11px sans-serif';
+                    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                    ctx.fillText('+', p.x, p.y);
+                } else if(p.type === 'cl' || p.type === 'ch3coo') {
+                    ctx.fillStyle = '#000000'; ctx.font = 'bold 11px sans-serif';
+                    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                    ctx.fillText('-', p.x, p.y);
+                }
+            });
+        }
+
+        function showVisualVoltage(ctx, cvs) {
+            ctx.fillStyle = 'rgba(255,255,255,0.06)';
+            ctx.fillRect(35, 0, 8, cvs.height); ctx.fillRect(cvs.width - 45, 0, 8, cvs.height);
+        }
+
+        function processActiveExperimentData() {
+            const data = solveSystem();
+            
+            if (selectedTest === 'conductivity') {
+                let s_light = Math.min(255, Math.round(data.strong.h3o * 180));
+                let w_light = Math.min(255, Math.round(data.weak.h3o * 180));
+
+                let sb = document.getElementById('s-bulb'); let wb = document.getElementById('w-bulb');
+                if(sb) { sb.style.background = `rgb(${s_light},${s_light},0)`; sb.style.boxShadow = `0 0 ${s_light/8}px #ffff00`; }
+                if(wb) { wb.style.background = `rgb(${w_light},${w_light},0)`; wb.style.boxShadow = `0 0 ${w_light/8}px #ffff00`; }
+
+                let s_curr = data.strong.h3o * 25; let w_curr = data.weak.h3o * 25;
+                document.getElementById('s-summary').innerHTML = `<b>Current Flow:</b> ${s_curr.toFixed(1)} mA`;
+                document.getElementById('w-summary').innerHTML = `<b>Current Flow:</b> ${w_curr.toFixed(1)} mA`;
+
+                graphHistory.push({ t: timelineTick, s: s_curr, w: w_curr });
+                drawCompleteChart("Amperage Current Flow (mA)", 0, Math.max(25, s_curr, w_curr)*1.1, 100);
+                if (timelineTick >= 100) stopExperimentLoop();
+
+            } else if (selectedTest === 'neutralization') {
+                document.getElementById('s-stream').style.display = 'block';
+                document.getElementById('w-stream').style.display = 'block';
+
+                let baseAdded = (timelineTick / 100) * (Math.max(data.strong.conc, data.weak.conc) * 1.4);
+                let s_ph = calcTitrationCurve('strong', data.strong.conc, baseAdded);
+                let w_ph = calcTitrationCurve('weak', data.weak.conc, baseAdded);
+
+                let s_t = 20 + Math.min(data.strong.conc, baseAdded) * 12;
+                let w_t = 20 + Math.min(data.weak.conc, baseAdded) * 11;
+
+                document.getElementById('s-t').style.height = `${(s_t/50)*100}%`;
+                document.getElementById('w-t').style.height = `${(w_t/50)*100}%`;
+
+                document.getElementById('s-fluid').style.backgroundColor = getIndicatorHex(s_ph);
+                document.getElementById('w-fluid').style.backgroundColor = getIndicatorHex(w_ph);
+
+                document.getElementById('s-summary').innerHTML = `<b>NaOH Added:</b> ${baseAdded.toFixed(2)} M equiv.<br><b>pH value:</b> ${s_ph.toFixed(2)}`;
+                document.getElementById('w-summary').innerHTML = `<b>NaOH Added:</b> ${baseAdded.toFixed(2)} M equiv.<br><b>pH value:</b> ${w_ph.toFixed(2)}`;
+
+                graphHistory.push({ t: baseAdded, s: s_ph, w: w_ph });
+                let maxBoundX = Math.max(data.strong.conc, data.weak.conc) * 1.4;
+                drawCompleteChart("Solution pH Metric", 0, 14, maxBoundX, true);
+
+                if (timelineTick >= 100) {
+                    document.getElementById('s-stream').style.display = 'none';
+                    document.getElementById('w-stream').style.display = 'none';
+                    stopExperimentLoop();
+                }
+            }
+        }
+
+        function calcTitrationCurve(type, acidConc, baseAdded) {
+            if (type === 'strong') {
+                if (baseAdded < acidConc) return -Math.log10(acidConc - baseAdded);
+                if (Math.abs(baseAdded - acidConc) < 1e-3) return 7.0;
+                return 14 + Math.log10(baseAdded - acidConc);
+            } else {
+                if (baseAdded < acidConc) {
+                    if (baseAdded === 0) return -Math.log10(Math.sqrt(Ka_Enhanced * acidConc));
+                    return -Math.log10(Ka_Enhanced) + Math.log10(baseAdded / (acidConc - baseAdded));
+                }
+                if (Math.abs(baseAdded - acidConc) < 1e-3) return 7.0 + 0.5 * (Math.log10(acidConc) + Math.log10(Ka_Enhanced));
+                return 14 + Math.log10(baseAdded - acidConc);
+            }
+        }
+
+        function getIndicatorHex(ph) {
+            if (ph < 3.8) return 'rgba(239, 68, 68, 0.25)';
+            if (ph < 6.2) return 'rgba(245, 158, 11, 0.25)';
+            if (ph < 8.3) return 'rgba(16, 185, 129, 0.2)';
+            return 'rgba(236, 72, 153, 0.45)'; 
+        }
+
+        function drawCompleteChart(yLabel, minY, maxY, maxX, xIsBase = false) {
+            ctxG.clearRect(0,0,cvsG.width,cvsG.height);
+            const padL = 50, padB = 40, padT = 20, padR = 20;
+            const w = cvsG.width - padL - padR;
+            const h = cvsG.height - padT - padB;
+
+            // X & Y Lab Gridlines Setup
+            ctxG.strokeStyle = '#223049';
+            ctxG.lineWidth = 1;
+            ctxG.fillStyle = 'var(--text-muted)';
+            ctxG.font = '9px monospace';
+            
+            for (let i = 0; i <= 4; i++) {
+                let ratio = i / 4;
+                let yVal = minY + ratio * (maxY - minY);
+                let yPos = cvsG.height - padB - ratio * h;
+                
+                ctxG.beginPath();
+                ctxG.moveTo(padL, yPos);
+                ctxG.lineTo(cvsG.width - padR, yPos);
+                ctxG.stroke();
+                ctxG.fillText(yVal.toFixed(1), padL - 34, yPos + 3);
+            }
+
+            for (let i = 0; i <= 5; i++) {
+                let ratio = i / 5;
+                let xVal = ratio * maxX;
+                let xPos = padL + ratio * w;
+                
+                ctxG.beginPath();
+                ctxG.moveTo(xPos, padT);
+                ctxG.lineTo(xPos, cvsG.height - padB);
+                ctxG.stroke();
+                ctxG.fillText(xVal.toFixed(1), xPos - 10, cvsG.height - padB + 14);
+            }
+
+            // Outer Workspace Borders
+            ctxG.strokeStyle = 'var(--border-color)';
+            ctxG.lineWidth = 1.5;
+            ctxG.beginPath();
+            ctxG.moveTo(padL, padT); ctxG.lineTo(padL, cvsG.height - padB); ctxG.lineTo(cvsG.width - padR, cvsG.height - padB);
+            ctxG.stroke();
+
+            // Label Text Titles
+            ctxG.fillStyle = '#fff';
+            ctxG.font = '11px sans-serif';
+            ctxG.fillText(yLabel, padL, padT - 8);
+            ctxG.fillText(xIsBase ? "NaOH Added Concentration Equivalent (M)" : "Time Step Timeline Vector (Ticks)", cvsG.width - 245, cvsG.height - padB + 28);
+
+            if (graphHistory.length === 0) return;
+
+            // Plot HCl Strong Acid Vector (Blue Path)
+            ctxG.lineWidth = 2.5; ctxG.strokeStyle = '#00a2ff'; ctxG.beginPath();
+            graphHistory.forEach((pt, idx) => {
+                let lx = padL + (pt.t / maxX) * w;
+                let ly = cvsG.height - padB - ((pt.s - minY) / (maxY - minY)) * h;
+                if (idx === 0) ctxG.moveTo(lx, ly); else ctxG.lineTo(lx, ly);
+            });
+            ctxG.stroke();
+
+            // Plot CH3COOH Ethanoic Acid Vector (Yellow Path)
+            ctxG.strokeStyle = '#facc15'; ctxG.beginPath();
+            graphHistory.forEach((pt, idx) => {
+                let lx = padL + (pt.t / maxX) * w;
+                let ly = cvsG.height - padB - ((pt.w - minY) / (maxY - minY)) * h;
+                if (idx === 0) ctxG.moveTo(lx, ly); else ctxG.lineTo(lx, ly);
+            });
+            ctxG.stroke();
+        }
+
+        function updateGraphPlaceholder() {
+            let maxVal = selectedTest === 'neutralization' ? 14 : 100;
+            drawCompleteChart(runActive ? "Plotting Lab Vectors..." : "Click 'Run Selected Experiment' to generate real-time laboratory graph curves.", 0, maxVal * 1.1, 100);
+        }
+
+        window.addEventListener('resize', () => { resizeCanvases(); refreshSimulation(); });
+        resizeCanvases(); refreshSimulation(); coreLoop();
+    </script>
+</body>
+</html>
