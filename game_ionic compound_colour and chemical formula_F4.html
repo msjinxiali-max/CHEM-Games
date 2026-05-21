@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DSE Chemical Formula Master - Bear's Forest V4</title>
+    <style>
+        :root {
+            --forest: #14532d;
+            --dark: #0f172a;
+            --wood: #78350f;
+            --red: #ef4444;
+            --blue: #3b82f6;
+            --green: #22c55e;
+            --yellow: #eab308;
+            --orange: #f97316;
+            --purple: #a855f7;
+            --white: #ffffff;
+            --mint: #2dd4bf;
+            --pink: #ec4899;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #022c22;
+            color: #f8fafc;
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            user-select: none;
+        }
+
+        .game-box {
+            width: 100%;
+            max-width: 680px;
+            background-color: var(--forest);
+            border: 5px solid var(--wood);
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: 0 12px 25px rgba(0,0,0,0.5);
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #052e16;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            border: 2px solid var(--wood);
+        }
+
+        .hearts { color: var(--red); letter-spacing: 2px; }
+
+        .screen {
+            background-color: var(--dark);
+            border: 3px solid #475569;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            min-height: 180px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        .main-emoji { font-size: 60px; margin-bottom: 10px; animation: bounce 0.8s infinite alternate; }
+        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-8px); } }
+
+        .bear-clash { animation: shake 0.15s infinite; background-color: #991b1b !important; }
+        @keyframes shake {
+            0% { transform: translate(1px, 1px); }
+            50% { transform: translate(-2px, -1px); }
+            100% { transform: translate(1px, -1px); }
+        }
+
+        .text-title { font-size: 22px; font-weight: bold; margin: 5px 0; color: #38bdf8; }
+        .text-info { font-size: 16px; color: #cbd5e1; margin-top: 5px; }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .opt-btn {
+            background-color: #1e293b;
+            border: 2px solid #475569;
+            color: white;
+            padding: 15px;
+            font-size: 17px;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: transform 0.1s;
+        }
+        .opt-btn:hover { transform: scale(1.02); border-color: #38bdf8; }
+
+        .color-dot {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            display: inline-block;
+        }
+
+        .bag-tray {
+            background-color: #052e16;
+            border: 2px dashed var(--wood);
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .bag-title { font-size: 14px; color: #a7f3d0; font-weight: bold; margin-bottom: 8px; text-transform: uppercase; }
+
+        .ion-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background-color: #1e3a8a;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            margin: 4px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: default;
+            border: 1px solid #3b82f6;
+        }
+        .active-bag-item {
+            cursor: pointer !important;
+            background-color: #15803d !important;
+            border-color: #4ade80 !important;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+
+        .feedback {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 10px;
+            min-height: 25px;
+        }
+        .win-msg { color: var(--green); }
+        .lose-msg { color: var(--red); }
+
+        sub, sup { line-height: 0; font-size: 11px; }
+    </style>
+</head>
+<body>
+
+    <div class="game-box">
+        <div class="top-bar">
+            <span id="game-stage-text">🌲 Stage 1: Forest</span>
+            <div>HP: <span id="hp-box" class="hearts">❤️❤️❤️</span></div>
+            <div>Score: <span id="score-box">0</span></div>
+        </div>
+
+        <div class="screen" id="main-screen">
+            <div class="main-emoji" id="screen-emoji">🌲</div>
+            <div class="text-title" id="screen-text-main">Loading...</div>
+            <div class="text-info" id="screen-text-sub">Please wait.</div>
+        </div>
+
+        <div id="options-ui" class="options-grid"></div>
+
+        <div class="bag-tray">
+            <div class="bag-title">🎒 Your Bag (<span id="bag-count">0</span> / 10 Unique Ions)</div>
+            <div id="bag-list" style="color: #94a3b8; font-size: 14px;">Empty. Find 10 random ions!</div>
+        </div>
+
+        <div class="feedback" id="action-feedback"></div>
+    </div>
+
+    <script>
+        // FULL COMPREHENSIVE DSE ION POOL (31 Ions) WITH WEIGHTING (weight: 3 = high frequency DSE core)
+        const ionPool = [
+            // High-Frequency Core Cations (weight: 3)
+            { id: "cu", name: "Copper(II) ion", formula: "Cu<sup>2+</sup>", colorName: "Blue", colorHex: "var(--blue)", weight: 3, wrong: [{ formula: "Cu<sup>2+</sup>", colorHex: "var(--yellow)" }, { formula: "Cu<sup>+</sup>", colorHex: "var(--blue)" }, { formula: "Cu<sup>2-</sup>", colorHex: "var(--blue)" }] },
+            { id: "fe3", name: "Iron(III) ion", formula: "Fe<sup>3+</sup>", colorName: "Yellow/Brown", colorHex: "var(--orange)", weight: 3, wrong: [{ formula: "Fe<sup>3+</sup>", colorHex: "var(--blue)" }, { formula: "Fe<sup>2+</sup>", colorHex: "var(--orange)" }, { formula: "Fe<sup>3-</sup>", colorHex: "var(--orange)" }] },
+            { id: "fe2", name: "Iron(II) ion", formula: "Fe<sup>2+</sup>", colorName: "Pale Green", colorHex: "var(--mint)", weight: 3, wrong: [{ formula: "Fe<sup>2+</sup>", colorHex: "var(--orange)" }, { formula: "Fe<sup>3+</sup>", colorHex: "var(--mint)" }, { formula: "Fe<sup>2-</sup>", colorHex: "var(--mint)" }] },
+            { id: "nh4", name: "Ammonium ion", formula: "NH<sub>4</sub><sup>+</sup>", colorName: "Colorless", colorHex: "var(--white)", weight: 3, wrong: [{ formula: "NH<sub>3</sub><sup>+</sup>", colorHex: "var(--white)" }, { formula: "NH<sub>4</sub><sup>2+</sup>", colorHex: "var(--white)" }, { formula: "NH<sub>3</sub>", colorHex: "var(--white)" }] },
+            { id: "zn", name: "Zinc ion", formula: "Zn<sup>2+</sup>", colorName: "Colorless", colorHex: "var(--white)", weight: 3, wrong: [{ formula: "Zn<sup>+</sup>", colorHex: "var(--white)" }, { formula: "Zn<sup>2-</sup>", colorHex: "var(--white)" }, { formula: "Zn<sub>2</sub><sup>+</sup>", colorHex: "var(--white)" }] },
+            { id: "na", name: "Sodium ion", formula: "Na<sup>+</sup>", colorName: "Colorless", colorHex: "var(--white)", weight: 3, wrong: [{ formula: "Na<sup>+</sup>", colorHex: "var(--blue)" }, { formula: "Na<sup>2+</sup>", colorHex: "var(--white)" }, { formula: "Na<sup>-</sup>", colorHex: "var(--white)" }] },
+            { id: "ca", name: "Calcium ion", formula: "Ca<sup>2+</sup>", colorName: "Colorless", colorHex: "var(--white)", weight: 3, wrong: [{ formula: "Ca<sup>+</sup>", colorHex: "var(--white)" }, { formula: "Ca<sup>2-</sup>", colorHex: "var(--white)" }, { formula: "C<sup>2+</sup>", colorHex: "var(--white)" }] },
+            
+            // High-Frequency Core Anions (weight: 3)
+            { id: "no3", name: "Nitrate ion", formula: "NO<sub>3</sub><sup>-</sup>", colorName: "Colorless", colorHex: "var(--white)", weight: 3, wrong: [{ formula: "NO<sub>3</sub><sup>2-</sup>", colorHex: "var(--white)" }, { formula: "NO<sub>2</sub><sup>-</sup>", colorHex: "var(--white)" }, { formula: "NO<sub>3</sub><sup>+</sup>", colorHex: "var(--white)" }] },
+            { id: "so4", name: "Sulfate ion", formula: "SO<sub>4</sub><sup>2-</sup>", colorName: "Colorless", colorHex: "var(--white)", weight: 3, wrong: [{ formula: "SO<sub>4</sub><sup>-</sup>", colorHex: "var(--white)" }, { formula: "S<sup>2-</sup>", colorHex: "var(--white)" }, { formula: "SO<sub>3</sub><sup>2-</sup>", colorHex: "var(--white)" }] },
+            { id: "cl", name: "Chloride ion", formula: "Cl<sup>-</sup>", colorName: "Colorless", colorHex: "var(--white)", weight: 3, wrong: [{ formula: "Cl<sup>-</sup>", colorHex: "var(--purple)" }, { formula: "Cl<sub>2</sub><sup>-</sup>", colorHex: "var(--white)" }, { formula: "Cl<sup>+</sup>", colorHex: "var(--white)" }] },
+            { id: "oh", name: "Hydroxide ion", formula: "OH<sup>-</sup>", colorName: "Colorless", colorHex: "var(--white)", weight: 3, wrong: [{ formula: "OH<sup>2-</sup>", colorHex: "var(--white)" }, { formula: "O<sup>2-</sup>", colorHex: "var(--white)" }, { formula: "OH<sup>+</sup>", colorHex: "var(--white)" }] },
+            { id: "co3", name: "Carbonate ion", formula: "CO<sub>3</sub><sup>2-</sup>", colorName: "Colorless", colorHex: "var(--white)", weight: 3, wrong: [{ formula: "CO<sub>3</sub><sup>-</sup>", colorHex: "var(--white)" }, { formula: "CO<sub>2</sub><sup>2-</sup>", colorHex: "var(--white)" }, { formula: "HCO<sub>3</sub><sup>-</sup>", colorHex: "var(--white)" }] },
+            { id: "mno4", name: "Permanganate ion", formula: "MnO<sub>4</sub><sup>-</sup>", colorName: "Purple", colorHex: "var(--purple)", weight: 3, wrong: [{ formula: "MnO<sub>4</sub><sup>-</sup>", colorHex: "var(--green)" }, { formula: "MnO<sub>4</sub><sup>2-</sup>", colorHex: "var(--purple)" }, { formula: "Mn<sup>2+</sup>", colorHex: "var(--purple)" }] },
+            { id: "cro4", name: "Chromate ion", formula: "CrO<sub>4</sub><sup>2-</sup>", colorName: "Yellow", colorHex: "var(--yellow)", weight: 3, wrong: [{ formula: "CrO<sub>4</sub><sup>2-</sup>", colorHex: "var(--orange)" }, { formula: "Cr<sub>2</sub>O<sub>7</sub><sup>2-</sup>", colorHex: "var(--yellow)" }, { formula: "CrO<sub>4</sub><sup>-</sup>", colorHex: "var(--yellow)" }] },
+            { id: "cr2o7", name: "Dichromate ion", formula: "Cr<sub>2</sub>O<sub>7</sub><sup>2-</sup>", colorName: "Orange", colorHex: "var(--orange)", weight: 3, wrong: [{ formula: "Cr<sub>2</sub>O<sub>7</sub><sup>2-</sup>", colorHex: "var(--yellow)" }, { formula: "CrO<sub>4</sub><sup>2-</sup>", colorHex: "var(--orange)" }, { formula: "Cr<sub>2</sub>O<sub>7</sub><sup>-</sup>", colorHex: "var(--orange)" }] },
+
+            // Standard DSE Pool Ions (weight: 1)
+            { id: "h", name: "Hydrogen ion", formula: "H<sup>+</sup>", colorName: "Colorless", weight: 1, wrong: [{ formula: "H<sup>-</sup>", colorHex: "var(--white)" }, { formula: "H<sub>2</sub><sup>+</sup>", colorHex: "var(--white)" }, { formula: "H<sup>2+</sup>", colorHex: "var(--white)" }] },
+            { id: "li", name: "Lithium ion", formula: "Li<sup>+</sup>", colorName: "Colorless", weight: 1, wrong: [{ formula: "Li<sup>2+</sup>", colorHex: "var(--white)" }, { formula: "Li<sup>-</sup>", colorHex: "var(--white)" }, { formula: "Li<sub>2</sub><sup>+</sup>", colorHex: "var(--white)" }] },
+            { id: "k", name: "Potassium ion", formula: "K<sup>+</sup>", colorName: "Colorless", weight: 1, wrong: [{ formula: "K<sup>2+</sup>", colorHex: "var(--white)" }, { formula: "K<sup>-</sup>", colorHex: "var(--white)" }, { formula: "P<sup>+</sup>", colorHex: "var(--white)" }] },
+            { id: "ag", name: "Silver ion", formula: "Ag<sup>+</sup>", colorName: "Colorless", weight: 1, wrong: [{ formula: "Ag<sup>2+</sup>", colorHex: "var(--white)" }, { formula: "Ag<sup>-</sup>", colorHex: "var(--white)" }, { formula: "Au<sup>+</sup>", colorHex: "var(--white)" }] },
+            { id: "mg", name: "Magnesium ion", formula: "Mg<sup>2+</sup>", colorName: "Colorless", weight: 1, wrong: [{ formula: "Mg<sup>+</sup>", colorHex: "var(--white)" }, { formula: "Mg<sup>2-</sup>", colorHex: "var(--white)" }, { formula: "Mn<sup>2+</sup>", colorHex: "var(--white)" }] },
+            { id: "ba", name: "Barium ion", formula: "Ba<sup>2+</sup>", colorName: "Colorless", weight: 1, wrong: [{ formula: "Ba<sup>+</sup>", colorHex: "var(--white)" }, { formula: "Ba<sup>2-</sup>", colorHex: "var(--white)" }, { formula: "Br<sup>2+</sup>", colorHex: "var(--white)" }] },
+            { id: "pb", name: "Lead(II) ion", formula: "Pb<sup>2+</sup>", colorName: "Colorless", weight: 1, wrong: [{ formula: "Pb<sup>4+</sup>", colorHex: "var(--white)" }, { formula: "Pb<sup>-</sup>", colorHex: "var(--white)" }, { formula: "Pl<sup>2+</sup>", colorHex: "var(--white)" }] },
+            { id: "al", name: "Aluminium ion", formula: "Al<sup>3+</sup>", colorName: "Colorless", weight: 1, wrong: [{ formula: "Al Jaeger", colorHex: "var(--white)" }, { formula: "Al<sup>2+</sup>", colorHex: "var(--white)" }, { formula: "Al<sup>3-</sup>", colorHex: "var(--white)" }] },
+            
+            { id: "f", name: "Fluoride ion", formula: "F<sup>-</sup>", colorName: "Colorless", weight: 1, wrong: [{ formula: "F<sub>2</sub><sup>-</sup>", colorHex: "var(--white)" }, { formula: "F<sup>+</sup>", colorHex: "var(--white)" }, { formula: "Fl<sup>-</sup>", colorHex: "var(--white)" }] },
+            { id: "br", name: "Bromide ion", formula: "Br<sup>-</sup>", colorName: "Colorless", weight: 1, wrong: [{ formula: "Br<sup>2-</sup>", colorHex: "var(--white)" }, { formula: "Br<sub>2</sub><sup>-</sup>", colorHex: "var(--white)" }, { formula: "B<sup>-</sup>", colorHex: "var(--white)" }] },
+            { id: "i", name: "Iodide ion", formula: "I<sup>-</sup>", colorName: "Colorless", weight: 1, wrong: [{ formula: "I<sup>5-</sup>", colorHex: "var(--white)" }, { formula: "I<sub>2</sub><sup>-</sup>", colorHex: "var(--white)" }, { formula: "I<sup>+</sup>", colorHex: "var(--white)" }] },
+            { id: "o", name: "Oxide ion", formula: "O<sup>2-</sup>", colorName: "Colorless", weight: 1, wrong: [{ formula: "O<sup>-</sup>", colorHex: "var(--white)" }, { formula: "O<sub>2</sub><sup>2-</sup>", colorHex: "var(--white)" }, { formula: "OH<sup>-</sup>", colorHex: "var(--white)" }] },
+            { id: "s", name: "Sulfide ion", formula: "S<sup>2-</sup>", colorName: "Colorless", weight: 1, wrong: [{ formula: "S<sup>-</sup>", colorHex: "var(--white)" }, { formula: "SO<sub>4</sub><sup>2-</sup>", colorHex: "var(--white)" }, { formula: "S<sup>2+</sup>", colorHex: "var(--white)" }] },
+            { id: "hco3", name: "Hydrogencarbonate ion", formula: "HCO<sub>3</sub><sup>-</sup>", colorName: "Colorless", weight: 1, wrong: [{ formula: "HCO<sub>3</sub><sup>2-</sup>", colorHex: "var(--white)" }, { formula: "CO<sub>3</sub><sup>2-</sup>", colorHex: "var(--white)" }, { formula: "H<sub>2</sub>CO<sub>3</sub>", colorHex: "var(--white)" }] },
+            { id: "po4", name: "Phosphate ion", formula: "PO<sub>4</sub><sup>3-</sup>", colorName: "Colorless", weight: 1, wrong: [{ formula: "PO<sub>4</sub><sup>2-</sup>", colorHex: "var(--white)" }, { formula: "PO<sub>3</sub><sup>3-</sup>", colorHex: "var(--white)" }, { formula: "P<sup>3-</sup>", colorHex: "var(--white)" }] },
+            { id: "so3", name: "Sulfite ion", formula: "SO<sub>3</sub><sup>2-</sup>", colorName: "Colorless", weight: 1, wrong: [{ formula: "SO<sub>3</sub><sup>-</sup>", colorHex: "var(--white)" }, { formula: "SO<sub>4</sub><sup>2-</sup>", colorHex: "var(--white)" }, { formula: "S<sup>2-</sup>", colorHex: "var(--white)" }] }
+        ];
+
+        // MASTER DSE CHEMICAL FORMULAS DATABASE FOR STAGE 2 (25 items)
+        const stage2MasterPool = [
+            { targetId: "no3", targetIonName: "Nitrate ion", compoundName: "Copper(II) nitrate", correct: "Cu(NO<sub>3</sub>)<sub>2</sub>", wrong: ["CuNO<sub>3</sub>", "Cu(NO<sub>3</sub>)", "Cu<sub>2</sub>NO<sub>3</sub>"] },
+            { targetId: "cro4", targetIonName: "Chromate ion", compoundName: "Sodium chromate", correct: "Na<sub>2</sub>CrO<sub>4</sub>", wrong: ["NaCrO<sub>4</sub>", "Na(CrO<sub>4</sub>)<sub>2</sub>", "Na<sub>2</sub>(CrO<sub>4</sub>)<sub>2</sub>"] },
+            { targetId: "nh4", targetIonName: "Ammonium ion", compoundName: "Ammonium chloride", correct: "NH<sub>4</sub>Cl", wrong: ["(NH<sub>4</sub>)Cl", "NH<sub>4</sub>Cl<sub>4</sub>", "AmCl"] },
+            { targetId: "oh", targetIonName: "Hydroxide ion", compoundName: "Iron(III) hydroxide", correct: "Fe(OH)<sub>3</sub>", wrong: ["FeOH<sub>3</sub>", "FeOH", "Fe<sub>3</sub>OH"] },
+            { targetId: "so4", targetIonName: "Sulfate ion", compoundName: "Ammonium sulfate", correct: "(NH<sub>4</sub>)<sub>2</sub>SO<sub>4</sub>", wrong: ["NH<sub>4</sub>SO<sub>4</sub>", "NH<sub>4</sub>(SO<sub>4</sub>)<sub>2</sub>", "(NH<sub>4</sub>)<sub>2</sub>(SO<sub>4</sub>)<sub>2</sub>"] },
+            { targetId: "mno4", targetIonName: "Permanganate ion", compoundName: "Sodium permanganate", correct: "NaMnO<sub>4</sub>", wrong: ["Na(MnO<sub>4</sub>)<sub>2</sub>", "Na<sub>2</sub>MnO<sub>4</sub>", "NaMnO"] },
+            { targetId: "cl", targetIonName: "Chloride ion", compoundName: "Copper(II) chloride", correct: "CuCl<sub>2</sub>", wrong: ["CuCl", "Cu<sub>2</sub>Cl", "Cu(Cl)2"] },
+            { targetId: "so4", targetIonName: "Sulfate ion", compoundName: "Iron(III) sulfate", correct: "Fe<sub>2</sub>(SO<sub>4</sub>)<sub>3</sub>", wrong: ["FeSO<sub>4</sub>", "Fe<sub>3</sub>(SO<sub>4</sub>)<sub>2</sub>", "Fe<sub>2</sub>SO<sub>4</sub>"] },
+            { targetId: "oh", targetIonName: "Hydroxide ion", compoundName: "Sodium hydroxide", correct: "NaOH", wrong: ["Na(OH)", "Na<sub>2</sub>OH", "NaOH<sub>2</sub>"] },
+            { targetId: "so4", targetIonName: "Sulfate ion", compoundName: "Copper(II) sulfate", correct: "CuSO<sub>4</sub>", wrong: ["Cu<sub>2</sub>SO<sub>4</sub>", "Cu(SO<sub>4</sub>)<sub>2</sub>", "Cu<sub>2</sub>(SO<sub>4</sub>)<sub>3</sub>"] },
+            { targetId: "no3", targetIonName: "Nitrate ion", compoundName: "Ammonium nitrate", correct: "NH<sub>4</sub>NO<sub>3</sub>", wrong: ["(NH<sub>4</sub>)<sub>2</sub>NO<sub>3</sub>", "NH<sub>4</sub>(NO<sub>3</sub>)<sub>2</sub>", "NH<sub>4</sub>NO"] },
+            { targetId: "cl", targetIonName: "Chloride ion", compoundName: "Iron(III) chloride", correct: "FeCl<sub>3</sub>", wrong: ["FeCl", "Fe<sub>3</sub>Cl", "Fe<sub>2</sub>Cl<sub>3</sub>"] },
+            { targetId: "zn", targetIonName: "Zinc ion", compoundName: "Zinc chloride", correct: "ZnCl<sub>2</sub>", wrong: ["ZnCl", "Zn<sub>2</sub>Cl", "Zn(Cl)<sub>2</sub>"] },
+            { targetId: "ag", targetIonName: "Silver ion", compoundName: "Silver nitrate", correct: "AgNO<sub>3</sub>", wrong: ["Ag(NO<sub>3</sub>)<sub>2</sub>", "Ag<sub>2</sub>NO<sub>3</sub>", "AgNO"] },
+            { targetId: "al", targetIonName: "Aluminium ion", compoundName: "Aluminium sulfate", correct: "Al<sub>2</sub>(SO<sub>4</sub>)<sub>3</sub>", wrong: ["AlSO<sub>4</sub>", "Al<sub>3</sub>(SO<sub>4</sub>)<sub>2</sub>", "Al<sub>2</sub>SO<sub>4</sub>"] },
+            { targetId: "ca", targetIonName: "Calcium ion", compoundName: "Calcium hydroxide", correct: "Ca(OH)<sub>2</sub>", wrong: ["CaOH<sub>2</sub>", "CaOH", "Ca<sub>2</sub>OH"] },
+            { targetId: "co3", targetIonName: "Carbonate ion", compoundName: "Sodium carbonate", correct: "Na<sub>2</sub>CO<sub>3</sub>", wrong: ["NaCO<sub>3</sub>", "Na(CO<sub>3</sub>)<sub>2</sub>", "Na<sub>2</sub>(CO<sub>3</sub>)<sub>2</sub>"] },
+            { targetId: "po4", targetIonName: "Phosphate ion", compoundName: "Magnesium phosphate", correct: "Mg<sub>3</sub>(PO<sub>4</sub>)<sub>2</sub>", wrong: ["MgPO<sub>4</sub>", "Mg<sub>2</sub>(PO<sub>4</sub>)<sub>3</sub>", "Mg(PO<sub>4</sub>)<sub>2</sub>"] },
+            { targetId: "fe2", targetIonName: "Iron(II) ion", compoundName: "Iron(II) sulfate", correct: "FeSO<sub>4</sub>", wrong: ["Fe<sub>2</sub>SO<sub>4</sub>", "Fe(SO<sub>4</sub>)<sub>2</sub>", "Fe<sub>2</sub>(SO<sub>4</sub>)<sub>3</sub>"] },
+            { targetId: "co3", targetIonName: "Carbonate ion", compoundName: "Calcium carbonate", correct: "CaCO<sub>3</sub>", wrong: ["Ca<sub>2</sub>CO<sub>3</sub>", "Ca(CO<sub>3</sub>)<sub>2</sub>", "CaCO"] },
+            { targetId: "cr2o7", targetIonName: "Dichromate ion", compoundName: "Potassium dichromate", correct: "K<sub>2</sub>Cr<sub>2</sub>O<sub>7</sub>", wrong: ["KCr<sub>2</sub>O<sub>7</sub>", "K<sub>2</sub>(Cr<sub>2</sub>O<sub>7</sub>)<sub>2</sub>", "K(Cr<sub>2</sub>O<sub>7</sub>)<sub>2</sub>"] },
+            { targetId: "hco3", targetIonName: "Hydrogencarbonate ion", compoundName: "Magnesium hydrogencarbonate", correct: "Mg(HCO<sub>3</sub>)<sub>2</sub>", wrong: ["MgHCO<sub>3</sub>", "Mg<sub>2</sub>HCO<sub>3</sub>", "Mg(HCO3)"] },
+            { targetId: "pb", targetIonName: "Lead(II) ion", compoundName: "Lead(II) chloride", correct: "PbCl<sub>2</sub>", wrong: ["PbCl", "Pb<sub>2</sub>Cl", "Pb(Cl)<sub>2</sub>"] },
+            { targetId: "ba", targetIonName: "Barium ion", compoundName: "Barium sulfate", correct: "BaSO<sub>4</sub>", wrong: ["Ba<sub>2</sub>SO<sub>4</sub>", "Ba(SO<sub>4</sub>)<sub>2</sub>", "BaSO"] },
+            { targetId: "so3", targetIonName: "Sulfite ion", compoundName: "Sodium sulfite", correct: "Na<sub>2</sub>SO<sub>3</sub>", wrong: ["NaSO<sub>3</sub>", "Na(SO<sub>3</sub>)<sub>2</sub>", "Na<sub>2</sub>SO<sub>4</sub>"] }
+        ];
+
+        let lives = 3;
+        let score = 0;
+        let stage = 1; 
+        let myBag = [];
+        let forestQueue = [];
+        let currentForestIndex = 0;
+
+        let stage2Quiz = []; 
+        let s2Round = 0;
+        let s2Phase = "find_ion"; 
+
+        // Fisher-Yates Shuffle Standard Array Mixer
+        function robustShuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // WEIGHTED DSE SAMPLING SELECTION ALGORITHM (Forces high-frequency items to occur often)
+        function generateWeightedForestQueue(pool, sampleSize) {
+            let poolCopy = [...pool];
+            let picked = [];
+
+            while (picked.length < sampleSize && poolCopy.length > 0) {
+                let totalWeight = poolCopy.reduce((sum, item) => sum + item.weight, 0);
+                let randomTarget = Math.random() * totalWeight;
+                let weightCounter = 0;
+
+                for (let i = 0; i < poolCopy.length; i++) {
+                    weightCounter += poolCopy[i].weight;
+                    if (randomTarget <= weightCounter) {
+                        picked.push(poolCopy[i]);
+                        poolCopy.splice(i, 1); // Extract element to enforce absolutely NO duplicates
+                        break;
+                    }
+                }
+            }
+            return picked;
+        }
+
+        window.onload = function() {
+            setupNewForestGame();
+        };
+
+        function setupNewForestGame() {
+            myBag = [];
+            currentForestIndex = 0;
+            lives = 3;
+            
+            // Draw 10 completely non-repeating items using DSE exam weight standards
+            forestQueue = generateWeightedForestQueue(ionPool, 10);
+
+            updateBagTrayUI();
+            startStage1Question();
+        }
+
+        function refreshHUD() {
+            let hearts = "";
+            for (let i = 0; i < 3; i++) {
+                hearts += (i < lives) ? "❤️" : "🖤";
+            }
+            document.getElementById('hp-box').innerHTML = hearts;
+            document.getElementById('score-box').innerText = score;
+            document.getElementById('bag-count').innerText = myBag.length;
+
+            if (lives <= 0) triggerGameOver();
+        }
+
+        /* ================= STAGE 1 ================= */
+        function startStage1Question() {
+            stage = 1;
+            refreshHUD();
+            document.getElementById('game-stage-text').innerText = "🌲 Stage 1: Forest";
+            document.getElementById('action-feedback').innerText = "";
+            document.getElementById('main-screen').className = "screen";
+
+            if (myBag.length >= 10) {
+                goToStage2Exit();
+                return;
+            }
+
+            let currentItem = forestQueue[currentForestIndex];
+
+            document.getElementById('screen-emoji').innerText = "🌲🏃";
+            document.getElementById('screen-text-main').innerHTML = `Find: <span style="color:var(--yellow); font-size:25px;">${currentItem.name}</span>`;
+            document.getElementById('screen-text-sub').innerText = `Solution color: ${currentItem.colorName || "Colorless"}`;
+
+            let choices = [];
+            choices.push({ formula: currentItem.formula, colorHex: currentItem.colorHex || "var(--white)", isCorrect: true });
+            currentItem.wrong.forEach(w => {
+                choices.push({ formula: w.formula, colorHex: w.colorHex || "var(--white)", isCorrect: false });
+            });
+            robustShuffle(choices); 
+
+            const grid = document.getElementById('options-ui');
+            grid.innerHTML = "";
+            choices.forEach(ch => {
+                const btn = document.createElement('button');
+                btn.className = "opt-btn";
+                btn.innerHTML = `<span class="color-dot" style="background-color:${ch.colorHex}"></span> <span>${ch.formula}</span>`;
+                btn.onclick = () => checkStage1Choice(ch.isCorrect, currentItem);
+                grid.appendChild(btn);
+            });
+        }
+
+        function checkStage1Choice(isCorrect, ionObj) {
+            document.querySelectorAll('.opt-btn').forEach(b => b.disabled = true);
+            const screen = document.getElementById('main-screen');
+
+            if (isCorrect) {
+                score += 10;
+                myBag.push(ionObj);
+                currentForestIndex++;
+                updateBagTrayUI();
+                
+                document.getElementById('screen-emoji').innerText = "🎒✨";
+                document.getElementById('screen-text-main').innerText = "Correct! Ion collected!";
+                document.getElementById('action-feedback').className = "feedback win-msg";
+                document.getElementById('action-feedback').innerText = `Success! Added ${ionObj.name}.`;
+                
+                setTimeout(startStage1Question, 1200);
+            } else {
+                lives--;
+                refreshHUD();
+                if (lives <= 0) return;
+
+                screen.classList.add('bear-clash');
+                document.getElementById('screen-emoji').innerText = "🐻💢";
+                document.getElementById('screen-text-main').innerText = "WRONG ION! Little bear bites you!";
+                document.getElementById('action-feedback').className = "feedback lose-msg";
+                document.getElementById('action-feedback').innerText = "-1 Heart! Check the valence charge/color!";
+
+                setTimeout(() => {
+                    screen.classList.remove('bear-clash');
+                    startStage1Question();
+                }, 2000);
+            }
+        }
+
+        function updateBagTrayUI() {
+            const listDiv = document.getElementById('bag-list');
+            if (myBag.length === 0) {
+                listDiv.innerHTML = "Your bag is empty. Find ions in the forest!";
+                return;
+            }
+
+            listDiv.innerHTML = "";
+            myBag.forEach((ion) => {
+                const badge = document.createElement('span');
+                badge.className = "ion-badge";
+                badge.id = `bag-${ion.id}`;
+                badge.innerHTML = `<span class="color-dot" style="width:11px; height:11px; background-color:${ion.colorHex || 'var(--white)'}"></span> ${ion.formula}`;
+                
+                if (stage === 2 && s2Phase === "find_ion") {
+                    badge.classList.add('active-bag-item');
+                    badge.onclick = () => selectBagIonForBear(ion.id);
+                }
+                listDiv.appendChild(badge);
+            });
+            document.getElementById('bag-count').innerText = myBag.length;
+        }
+
+        /* ================= STAGE 2 ================= */
+        function goToStage2Exit() {
+            stage = 2;
+            s2Round = 0;
+            s2Phase = "find_ion";
+            document.getElementById('game-stage-text').innerText = "🐻 Exit Gate";
+            
+            // INTELLIGENT COMPONENT FILTER: Grabs compounds whose ions exist inside the bag
+            let viableQuestions = stage2MasterPool.filter(q => {
+                return myBag.some(bagIon => bagIon.id === q.targetId);
+            });
+
+            // Scramble layout and slice exactly 5 questions out for Black Bear
+            robustShuffle(viableQuestions);
+            stage2Quiz = viableQuestions.slice(0, 5);
+
+            runStage2Logic();
+        }
+
+        function runStage2Logic() {
+            refreshHUD();
+            updateBagTrayUI();
+            document.getElementById('action-feedback').innerText = "";
+            document.getElementById('options-ui').innerHTML = "";
+
+            if (stage2Quiz.length < 5) {
+                // Fail-safe backup if user got weird pool distribution
+                stage2Quiz = stage2MasterPool.sort(() => Math.random() - 0.5).slice(0, 5);
+            }
+
+            let q = stage2Quiz[s2Round];
+
+            if (s2Phase === "find_ion") {
+                document.getElementById('screen-emoji').innerText = "🐻💬";
+                document.getElementById('screen-text-main').innerHTML = `Bear says: "Find <span style='color:var(--yellow);'>${q.targetIonName}</span> in your bag!"`;
+                document.getElementById('screen-text-sub').innerText = `Round ${s2Round + 1} / 5. Click the flashing green bag badge below!`;
+            } 
+            else if (s2Phase === "choose_formula") {
+                document.getElementById('screen-emoji').innerText = "🐻📜";
+                document.getElementById('screen-text-main').innerHTML = `Write formula for:<br><span style='color:var(--purple); font-size:25px;'>${q.compoundName}</span>`;
+                document.getElementById('screen-text-sub').innerText = "Watch out for brackets () and subscripts!";
+
+                let formulas = [];
+                formulas.push({ text: q.correct, isTrue: true });
+                q.wrong.forEach(w => formulas.push({ text: w, isTrue: false }));
+                robustShuffle(formulas); 
+
+                const grid = document.getElementById('options-ui');
+                grid.innerHTML = "";
+                formulas.forEach(form => {
+                    const btn = document.createElement('button');
+                    btn.className = "opt-btn";
+                    btn.innerHTML = form.text;
+                    btn.onclick = () => checkFormulaSelection(form.isTrue);
+                    grid.appendChild(btn);
+                });
+            }
+        }
+
+        function selectBagIonForBear(ionId) {
+            let q = stage2Quiz[s2Round];
+            if (ionId === q.targetId) {
+                score += 5;
+                s2Phase = "choose_formula";
+                runStage2Logic();
+            } else {
+                triggerConfiscationReset("Wrong ion token provided! Black Bear roars in fury!");
+            }
+        }
+
+        function checkFormulaSelection(isTrue) {
+            document.querySelectorAll('.opt-btn').forEach(b => b.disabled = true);
+            
+            if (isTrue) {
+                score += 25;
+                s2Round++;
+                
+                if (s2Round >= 5) {
+                    triggerGameVictory();
+                } else {
+                    s2Phase = "find_ion";
+                    document.getElementById('screen-emoji').innerText = "🐻👍";
+                    document.getElementById('screen-text-main').innerText = "Perfect Chemical Formula Spelling!";
+                    document.getElementById('action-feedback').className = "feedback win-msg";
+                    document.getElementById('action-feedback').innerText = "Bear is satisfied. Moving to next riddle!";
+                    setTimeout(runStage2Logic, 1500);
+                }
+            } else {
+                triggerConfiscationReset("Incorrect subscript / bracket formula. Black Bear confiscates your bag!");
+            }
+        }
+
+        function triggerConfiscationReset(reasonMessage) {
+            const screen = document.getElementById('main-screen');
+            screen.classList.add('bear-clash');
+            document.getElementById('options-ui').innerHTML = "";
+
+            document.getElementById('screen-emoji').innerText = "🐻😡";
+            document.getElementById('screen-text-main').innerText = "BAG CONFISCATED!";
+            document.getElementById('screen-text-sub').innerText = reasonMessage;
+            
+            document.getElementById('action-feedback').className = "feedback lose-msg";
+            document.getElementById('action-feedback').innerText = "Kicked back to Forest Stage... Bag emptied!";
+
+            setTimeout(() => {
+                screen.classList.remove('bear-clash');
+                setupNewForestGame(); 
+            }, 3500);
+        }
+
+        /* ================= TERMINATION END VIEWS ================= */
+        function triggerGameOver() {
+            document.getElementById('main-screen').className = "screen bear-clash";
+            document.getElementById('screen-emoji').innerText = "💀🐻";
+            document.getElementById('screen-text-main').innerText = "GAME OVER!";
+            document.getElementById('screen-text-sub').innerText = "You ran out of health inside the deep woods.";
+            document.getElementById('options-ui').innerHTML = `<button class='opt-btn' style='grid-column: span 2; background: var(--red);' onclick='location.reload()'>Restart Game 🔁</button>`;
+        }
+
+        function triggerGameVictory() {
+            document.getElementById('options-ui').innerHTML = "";
+            document.getElementById('main-screen').style.backgroundColor = "var(--forest)";
+            document.getElementById('screen-emoji').innerText = "🏆👑💨";
+            document.getElementById('screen-text-main').innerText = "YOU ESCAPED THE FOREST!";
+            document.getElementById('screen-text-sub').innerHTML = `Incredible! You matched all 5 chemical formulas flawlessly. Final Score: <b style="color:var(--yellow)">${score}</b>`;
+            document.getElementById('options-ui').innerHTML = `<button class='opt-btn' style='grid-column: span 2; background: var(--green); color:black; font-weight:bold;' onclick='location.reload()'>Play Again 🔁</button>`;
+        }
+    </script>
+</body>
+</html>
