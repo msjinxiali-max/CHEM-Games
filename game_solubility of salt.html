@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Solubility Master: DSE Special Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;900&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --p-red: #ff4d4d; 
+            --p-blue: #3d7dca; 
+            --p-gold: #ffcb05; 
+            --p-green: #2ecc71; 
+            --bg-dark: #0f0f1b;
+        }
+        * { touch-action: none; box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+        
+        body { 
+            margin: 0; 
+            background: var(--bg-dark); 
+            font-family: 'Poppins', sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            overflow: hidden; 
+        }
+
+        #game-container {
+            position: relative; 
+            width: 100%;
+            max-width: 420px; 
+            height: 100%;
+            max-height: 820px;
+            background: #f8fafc; 
+            border: 6px solid #334155; 
+            border-radius: 30px; 
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+        }
+
+        /* Screens with Smooth Transitions */
+        .screen { 
+            position: absolute; 
+            top: 0; left: 0; 
+            width: 100%; height: 100%; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            padding: 24px; 
+            text-align: center; 
+            z-index: 1000; 
+            background: #ffffff;
+            transition: opacity 0.4s ease, transform 0.4s ease;
+            opacity: 1;
+        }
+        .screen.hide { opacity: 0; pointer-events: none; transform: scale(0.95); }
+
+        #stage { 
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: linear-gradient(to bottom, #e2e8f0, #cbd5e1); 
+            display: block;
+        }
+
+        /* HUD & Hint */
+        #hud { 
+            position: absolute; top: 15px; left: 15px; right: 15px; 
+            background: rgba(255, 255, 255, 0.95); padding: 12px 16px; 
+            border-radius: 16px; border: 3px solid #1e293b; z-index: 500; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .bar-outer { width: 100%; height: 12px; background: #e2e8f0; border-radius: 10px; margin: 4px 0; overflow: hidden; border: 2px solid #1e293b; }
+        #hp-fill { width: 100%; height: 100%; background: var(--p-green); transition: width 0.2s, background-color 0.3s; }
+        #prog-fill { width: 0%; height: 100%; background: var(--p-blue); transition: width 0.2s; }
+
+        #hint-box {
+            position: absolute; top: 135px; left: 15px; right: 15px;
+            background: #1e293b; color: white; padding: 12px; border-radius: 12px;
+            font-size: 13px; font-weight: bold; opacity: 0; transition: opacity 0.3s; z-index: 600;
+            border-left: 6px solid var(--p-red); pointer-events: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        /* 321 Countdown Overlay */
+        #countdown-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 15, 27, 0.8); z-index: 1500;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--p-gold); font-size: 80px; font-weight: 900;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        }
+
+        /* Pop FX */
+        .pop-fx { position: absolute; font-size: 50px; animation: popUp 0.6s ease-out forwards; z-index: 2000; pointer-events: none; }
+        @keyframes popUp { 0% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(2.2) translateY(-60px); opacity: 0; } }
+
+        /* Smooth Moving Cart */
+        #player { 
+            position: absolute; bottom: 50px; left: 160px; 
+            width: 100px; height: 120px; z-index: 900; 
+            display: flex; flex-direction: column; align-items: center; justify-content: flex-end; 
+            will-change: left;
+        }
+        #pet { font-size: 55px; margin-bottom: -10px; z-index: 910; transition: transform 0.1s; }
+        .cart-body { width: 95px; height: 55px; border: 4px solid #334155; border-radius: 5px 5px 20px 20px; background: rgba(255,255,255,0.7); position: relative; z-index: 905; box-shadow: inset 0 -5px 0 rgba(0,0,0,0.05); }
+        .handle { position: absolute; top: -10px; left: -10px; width: 20px; height: 35px; border: 4px solid #334155; border-bottom: none; border-right: none; border-radius: 10px 0 0 0; }
+        .wheel { position: absolute; bottom: -12px; width: 18px; height: 18px; background: #1e293b; border-radius: 50%; border: 3px solid #64748b; }
+
+        /* Falling Salt Component */
+        .salt { 
+            position: absolute; padding: 10px 16px; border-radius: 14px; 
+            font-weight: 900; border: 3px solid #1e293b; font-size: 14px; 
+            z-index: 100; text-align: center; box-shadow: 0 6px 0 rgba(0,0,0,0.15);
+            will-change: top;
+        }
+       
+        /* Mistake Log UI */
+        #mistake-log { width: 100%; max-height: 220px; overflow-y: auto; text-align: left; font-size: 13px; background: #fff5f5; padding: 12px; border-radius: 14px; border: 2px solid #fee2e2; margin: 15px 0; }
+        .log-item { border-bottom: 1px solid #fecaca; padding: 6px 0; color: #991b1b; }
+        .log-item:last-child { border: none; }
+
+        .lvl-btn { width: 100%; padding: 16px; margin: 8px 0; border: 3px solid #1e293b; border-radius: 16px; font-weight: 800; font-size: 16px; color: white; cursor: pointer; transition: transform 0.1s; }
+        .lvl-btn:active { transform: scale(0.98); }
+        
+        /* Dedicated Touch Controller Zones for iPad */
+        .control-zone { position: absolute; bottom: 0; width: 50%; height: 85%; z-index: 850; -webkit-tap-highlight-color: transparent; }
+        .control-zone:active { background: rgba(255, 255, 255, 0.03); }
+        
+        .pet-opt { background: #f1f5f9; border: 3px solid #cbd5e1; font-size: 32px; width: 70px; height: 70px; display: flex; align-items: center; justify-content: center; border-radius: 20px; cursor: pointer; transition: 0.2s; }
+        .pet-opt.selected { border-color: #3b82f6; background: #eff6ff; transform: scale(1.1); }
+        
+        sub { font-size: 10px; vertical-align: sub; line-height: 0; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="menu" class="screen">
+        <h1 style="font-size: 26px; font-weight: 900; color: #1e293b; margin-bottom: 5px; letter-spacing: -0.5px;">SOLUBILITY SHOPPING</h1>
+        <p style="font-size: 14px; color: #64748b; margin-top: 0; font-weight: 600;">Catch DSE <b style="color:var(--p-red)">INSOLUBLE (不溶性)</b> Salts!</p>
+        
+        <div style="display:flex; gap:15px; margin: 20px 0;">
+            <div id="pet-dog" class="pet-opt selected" onclick="sel('🐶', 'pet-dog')">🐶</div>
+            <div id="pet-cat" class="pet-opt" onclick="sel('🐱', 'pet-cat')">🐱</div>
+            <div id="pet-pig" class="pet-opt" onclick="sel('🐷', 'pet-pig')">🐷</div>
+        </div>
+        
+        <button class="lvl-btn" style="background:#2ecc71;" onclick="start(1)">LEVEL 1 (Goal: 100)</button>
+        <button class="lvl-btn" style="background:#f59e0b;" onclick="start(2)">LEVEL 2 (Goal: 200)</button>
+        <button class="lvl-btn" style="background:#ef4444;" onclick="start(3)">LEVEL 3 (Goal: 300)</button>
+    </div>
+
+    <div id="stage">
+        <div id="hud">
+            <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:900; color:#334155;"><span>HEALTH</span><span id="hp-txt">100</span></div>
+            <div class="bar-outer"><div id="hp-fill"></div></div>
+            <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:900; color:#334155;"><span>PROGRESS</span><span id="score-txt">0/100</span></div>
+            <div class="bar-outer"><div id="prog-fill"></div></div>
+        </div>
+        <div id="hint-box"></div>
+        
+        <div id="player">
+            <div id="pet">🐶</div>
+            <div class="cart-body">
+                <div class="handle"></div>
+                <div class="wheel" style="left:12px;"></div>
+                <div class="wheel" style="right:12px;"></div>
+            </div>
+        </div>
+        
+        <div class="control-zone" style="left:0;" id="zone-left"></div>
+        <div class="control-zone" style="right:0;" id="zone-right"></div>
+    </div>
+
+    <div id="countdown-overlay">3</div>
+
+    <div id="end" class="screen hide">
+        <h2 id="end-title" style="font-size: 28px; font-weight: 900; margin-bottom: 5px;">RESULTS</h2>
+        <div id="end-emoji" style="font-size: 60px; margin: 10px 0;">🏆</div>
+        <div style="width:100%;">
+            <p style="font-weight:600; color:#475569;">Accuracy: <span id="end-acc" style="color:var(--p-blue); font-size:20px; font-weight:900;">0%</span></p>
+            <div id="mistake-log">Perfect Score!</div>
+        </div>
+        <button class="lvl-btn" style="background:#1e293b;" onclick="location.reload()">PLAY AGAIN 🔁</button>
+    </div>
+</div>
+
+<script>
+    const G = { 
+        score: 0, hp: 100, level: 1, active: false, 
+        x: 160, tx: 160, goal: 100, salts: [], 
+        correct: 0, total: 0, wrongList: [],
+        moveDir: 0, speedMultiplier: 1
+    };
+
+    // Upgraded DSE Textbook Database with accurate colors from your uploaded images
+    const DB = [
+        // INSOLUBLE PPT TARGETS (Score +10)
+        { f: "AgCl", s: false, c: "#ffffff", tc: "#1e293b", h: "Silver chloride (Ag⁺) is a White precipitate!" },
+        { f: "BaSO<sub>4</sub>", s: false, c: "#ffffff", tc: "#1e293b", h: "Barium sulfate (Ba²⁺) is a White precipitate!" },
+        { f: "CaCO<sub>3</sub>", s: false, c: "#ffffff", tc: "#1e293b", h: "Calcium carbonate is White & insoluble!" },
+        { f: "CuO", s: false, c: "#1e293b", tc: "#ffffff", h: "Copper(II) oxide is Black & insoluble!" },
+        { f: "PbI<sub>2</sub>", s: false, c: "#facc15", tc: "#1e293b", h: "Lead(II) iodide (Pb²⁺ + I⁻) is a bright Yellow ppt!" },
+        { f: "Fe(OH)<sub>3</sub>", s: false, c: "#b45309", tc: "#ffffff", h: "Iron(III) hydroxide (Fe³⁺) is a Yellow-Brown ppt!" },
+        { f: "CuCO<sub>3</sub>", s: false, c: "#10b981", tc: "#ffffff", h: "Copper(II) carbonate is Green & insoluble!" },
+        { f: "Mg(OH)<sub>2</sub>", s: false, c: "#ffffff", tc: "#1e293b", h: "Magnesium hydroxide is an insoluble White ppt!" },
+        { f: "PbSO<sub>4</sub>", s: false, c: "#ffffff", tc: "#1e293b", h: "Lead(II) sulfate is an insoluble White ppt!" },
+        { f: "Zn(OH)<sub>2</sub>", s: false, c: "#ffffff", tc: "#1e293b", h: "Zinc hydroxide is an insoluble White ppt!" },
+        { f: "Co(OH)<sub>2</sub>", s: false, c: "#ec4899", tc: "#ffffff", h: "Cobalt(II) hydroxide forms a Pink ppt!" },
+        { f: "Ni(OH)<sub>2</sub>", s: false, c: "#22c55e", tc: "#ffffff", h: "Nickel(II) hydroxide forms a Green ppt!" },
+        { f: "Cr(OH)<sub>3</sub>", s: false, c: "#15803d", tc: "#ffffff", h: "Chromium(III) hydroxide forms a Green ppt!" },
+       
+        // SOLUBLE AQUA TRAPS (Damages HP)
+        { f: "NaCl", s: true, c: "#ffffff", tc: "#1e293b", h: "TRAP: All Group 1 Sodium (Na⁺) salts are soluble!" },
+        { f: "KNO<sub>3</sub>", s: true, c: "#ffffff", tc: "#1e293b", h: "TRAP: All Nitrates (NO₃⁻) are completely soluble!" },
+        { f: "NH<sub>4</sub>Cl", s: true, c: "#ffffff", tc: "#1e293b", h: "TRAP: All Ammonium (NH₄⁺) salts are soluble!" },
+        { f: "NaHCO<sub>3</sub>", s: true, c: "#ffffff", tc: "#1e293b", h: "TRAP: All Hydrogencarbonates are soluble!" },
+        { f: "AgNO<sub>3</sub>", s: true, c: "#ffffff", tc: "#1e293b", h: "TRAP: All Nitrates are soluble, even Silver nitrate!" },
+        { f: "BaCl<sub>2</sub>", s: true, c: "#ffffff", tc: "#1e293b", h: "TRAP: Barium chloride is soluble in water!" },
+        { f: "FeSO<sub>4</sub>", s: true, c: "#bbf7d0", tc: "#1e293b", h: "TRAP: Iron(II) sulfate is Soluble (Pale Green solution)!" },
+        { f: "Cu(NO<sub>3</sub>)<sub>2</sub>", s: true, c: "#60a5fa", tc: "#ffffff", h: "TRAP: Copper(II) nitrate is Soluble (Blue solution)!" },
+        { f: "K<sub>2</sub>Cr<sub>2</sub>O<sub>7</sub>", s: true, c: "#f97316", tc: "#ffffff", h: "TRAP: Potassium dichromate is Soluble (Orange solution)!" },
+        { f: "K<sub>2</sub>CrO<sub>4</sub>", s: true, c: "#eab308", tc: "#1e293b", h: "TRAP: Potassium chromate is Soluble (Yellow solution)!" },
+        { f: "MnCl<sub>2</sub>", s: true, c: "#fce7f3", tc: "#1e293b", h: "TRAP: Manganese(II) chloride is Soluble (Pale Pink solution)!" }
+    ];
+
+    function sel(emoji, id) { 
+        document.getElementById('pet').innerText = emoji; 
+        document.querySelectorAll('.pet-opt').forEach(o => o.classList.remove('selected'));
+        document.getElementById(id).classList.add('selected');
+    }
+
+    function start(lv) {
+        G.level = lv; 
+        G.goal = [0, 100, 200, 300][lv];
+        document.getElementById('score-txt').innerText = `0/${G.goal}`;
+        
+        // Phase 1 Screen Transition
+        document.getElementById('menu').classList.add('hide');
+        
+        // Start 321 Countdown for smooth gameplay readiness
+        const overlay = document.getElementById('countdown-overlay');
+        overlay.style.opacity = "1";
+        let count = 3;
+        overlay.innerText = count;
+        
+        let timer = setInterval(() => {
+            count--;
+            if(count > 0) {
+                overlay.innerText = count;
+            } else if(count === 0) {
+                overlay.innerText = "GO!";
+            } else {
+                clearInterval(timer);
+                overlay.style.opacity = "0";
+                G.active = true; 
+                spawn(); 
+                loop();
+            }
+        }, 700);
+    }
+
+    // iPad Smooth Continuous Slide Mechanism Setup
+    const leftZone = document.getElementById('zone-left');
+    const rightZone = document.getElementById('zone-right');
+
+    leftZone.addEventListener('touchstart', (e) => { e.preventDefault(); G.moveDir = -1; });
+    leftZone.addEventListener('touchend', (e) => { e.preventDefault(); if(G.moveDir === -1) G.moveDir = 0; });
+    rightZone.addEventListener('touchstart', (e) => { e.preventDefault(); G.moveDir = 1; });
+    rightZone.addEventListener('touchend', (e) => { e.preventDefault(); if(G.moveDir === 1) G.moveDir = 0; });
+
+    // Desktop Mouse Fallback
+    leftZone.addEventListener('mousedown', () => G.moveDir = -1);
+    leftZone.addEventListener('mouseup', () => G.moveDir = 0);
+    leftZone.addEventListener('mouseleave', () => G.moveDir = 0);
+    rightZone.addEventListener('mousedown', () => G.moveDir = 1);
+    rightZone.addEventListener('mouseup', () => G.moveDir = 0);
+    rightZone.addEventListener('mouseleave', () => G.moveDir = 0);
+
+    // Keyboard controls
+    window.addEventListener('keydown', e => {
+        if(e.key === 'ArrowLeft') G.moveDir = -1;
+        if(e.key === 'ArrowRight') G.moveDir = 1;
+    });
+    window.addEventListener('keyup', e => {
+        if(e.key === 'ArrowLeft' && G.moveDir === -1) G.moveDir = 0;
+        if(e.key === 'ArrowRight' && G.moveDir === 1) G.moveDir = 0;
+    });
+
+    function spawn() {
+        if(!G.active) return;
+        const data = DB[Math.floor(Math.random() * DB.length)];
+        const el = document.createElement('div');
+        el.className = 'salt'; el.innerHTML = data.f;
+        el.style.background = data.c; el.style.color = data.tc;
+        el.style.left = Math.random() * (320 - 40) + 20 + 'px'; 
+        el.style.top = '-60px';
+        document.getElementById('stage').appendChild(el);
+        G.salts.push({ el, y: -60, data });
+        
+        // Progressive difficulty pacing
+        let spawnRate = Math.max(700, 2200 / (G.level * 0.8 + (G.score / G.goal)));
+        setTimeout(spawn, spawnRate);
+    }
+
+    function loop() {
+        if(!G.active) return;
+
+        // Smooth physics-based sliding interpolation
+        let cartSpeed = 7.5;
+        if (G.moveDir !== 0) {
+            G.tx += G.moveDir * cartSpeed;
+            // Cart tilt feedback effect
+            document.getElementById('pet').style.transform = `skewX(${G.moveDir * -8}deg)`;
+        } else {
+            document.getElementById('pet').style.transform = `skewX(0deg)`;
+        }
+        
+        G.tx = Math.max(0, Math.min(320, G.tx));
+        G.x += (G.tx - G.x) * 0.3; // Responsive dampening ease
+        document.getElementById('player').style.left = G.x + 'px';
+
+        let containerHeight = document.getElementById('game-container').clientHeight;
+
+        for (let i = G.salts.length - 1; i >= 0; i--) {
+            let s = G.salts[i];
+            let dropSpeed = [0, 3.2, 4.5, 6.5][G.level] + (G.score / G.goal * 1.5);
+            s.y += dropSpeed;
+            s.el.style.top = s.y + 'px';
+
+            let pR = document.getElementById('player').getBoundingClientRect();
+            let sR = s.el.getBoundingClientRect();
+
+            // High Precision Box Collision Verification
+            if (pR.left < sR.right && pR.right > sR.left && pR.top < sR.bottom && pR.bottom > sR.top) {
+                G.total++;
+                if (!s.data.s) { // Caught Insoluble Target
+                    G.score += 10; G.correct++; G.hp = Math.min(100, G.hp + 4);
+                    popFx('✨');
+                } else { // Hit Soluble Aqua Trap
+                    G.hp -= 25;
+                    G.wrongList.push({ f: s.data.f.replace(/<sub>/g, '').replace(/<\/sub>/g, ''), r: s.data.h });
+                    popFx('💥');
+                    showHint(s.data.h);
+                }
+                s.el.remove(); G.salts.splice(i, 1);
+                updateHUD();
+                
+                if (G.hp <= 0) end(false);
+                else if (G.score >= G.goal) end(true);
+            } else if (s.y > containerHeight) { 
+                // Penalty workaround: Missing an insoluble target breaks combo or costs miniscule health
+                if(!s.data.s) {
+                    G.hp -= 5;
+                    updateHUD();
+                    if (G.hp <= 0) end(false);
+                }
+                s.el.remove(); 
+                G.salts.splice(i, 1); 
+            }
+        }
+        if(G.active) requestAnimationFrame(loop);
+    }
+
+    function popFx(emoji) {
+        const f = document.createElement('div'); f.className = 'pop-fx'; f.innerText = emoji;
+        f.style.left = G.x + 35 + 'px'; f.style.top = (document.getElementById('game-container').clientHeight - 160) + 'px';
+        document.getElementById('game-container').appendChild(f);
+        setTimeout(() => f.remove(), 600);
+    }
+
+    function showHint(txt) {
+        const hb = document.getElementById('hint-box');
+        hb.innerHTML = `<span style="color:var(--p-red)">⚠️ MISSED:</span> ${txt}`; hb.style.opacity = 1;
+        setTimeout(() => { hb.style.opacity = 0; }, 4000);
+    }
+
+    function updateHUD() {
+        document.getElementById('score-txt').innerText = `${G.score}/${G.goal}`;
+        document.getElementById('hp-txt').innerText = G.hp;
+        document.getElementById('hp-fill').style.width = G.hp + '%';
+        document.getElementById('prog-fill').style.width = (G.score / G.goal * 100) + '%';
+        document.getElementById('hp-fill').style.background = G.hp < 40 ? 'var(--p-red)' : 'var(--p-green)';
+    }
+
+    function end(win) {
+        G.active = false;
+        
+        // Remove all hanging DOM elements cleanly
+        G.salts.forEach(s => s.el.remove());
+        G.salts = [];
+
+        const endScreen = document.getElementById('end');
+        endScreen.classList.remove('hide');
+        
+        const acc = G.total > 0 ? Math.round((G.correct / G.total) * 100) : 0;
+        document.getElementById('end-acc').innerText = acc + "%";
+        document.getElementById('end-title').innerText = win ? "VICTORY!" : "GAME OVER";
+        document.getElementById('end-title').style.color = win ? "var(--p-green)" : "var(--p-red)";
+        document.getElementById('end-emoji').innerText = win ? "🏆🎉" : "☠️🐾";
+       
+        const log = document.getElementById('mistake-log');
+        if(G.wrongList.length > 0) {
+            log.innerHTML = "<b style='color:#1e293b;'>DSE Syllabus Review Notes:</b><br>";
+            // Distinct items reduction
+            let uniqueWrongs = Array.from(new Set(G.wrongList.map(a => JSON.stringify(a)))).map(b => JSON.parse(b));
+            uniqueWrongs.forEach(m => {
+                log.innerHTML += `<div class='log-item'>• <b>${m.f}</b>: ${m.r}</div>`;
+            });
+        } else {
+            log.innerHTML = "✨ Perfect! You mastered all chemical solubility rules for this run!";
+        }
+    }
+</script>
+</body>
+</html>
